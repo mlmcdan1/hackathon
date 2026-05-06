@@ -1,0 +1,306 @@
+/* ── TV Test Pattern Loading Screen ── */
+
+.tvtp-root {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: #000;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  pointer-events: auto;
+}
+
+.tvtp-root--exit {
+  animation: tvtp-fade-out 0.55s cubic-bezier(0.4, 0, 1, 1) forwards;
+  pointer-events: none;
+}
+
+@keyframes tvtp-fade-out {
+  0%   { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* scanlines */
+.tvtp-scanlines {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0px,
+    transparent 2px,
+    rgba(0, 0, 0, 0.22) 2px,
+    rgba(0, 0, 0, 0.22) 4px
+  );
+}
+
+/* canvas static noise */
+.tvtp-static {
+  position: absolute;
+  inset: 0;
+  z-index: 8;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  mix-blend-mode: screen;
+  opacity: 0.28;
+}
+
+/* subtle rgb split */
+.tvtp-chroma {
+  position: absolute;
+  inset: 0;
+  z-index: 9;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, rgba(255, 0, 80, 0.06) 0%, transparent 3%),
+    linear-gradient(270deg, rgba(0, 200, 255, 0.06) 0%, transparent 3%);
+  mix-blend-mode: screen;
+}
+
+
+/* VHS tracking groove line */
+.tvtp-groove {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 28px;
+  z-index: 11;
+  pointer-events: none;
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(255, 255, 255, 0.06) 20%,
+    rgba(180, 220, 255, 0.18) 50%,
+    rgba(255, 255, 255, 0.06) 80%,
+    transparent 100%
+  );
+  animation: tvtp-groove-scan 4s linear infinite;
+  mix-blend-mode: screen;
+}
+
+@keyframes tvtp-groove-scan {
+  0%   { top: -30px; }
+  100% { top: 110%; }
+}
+
+/* ── Layout ── */
+
+.tvtp-layout {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 52px 1fr 180px;
+  min-height: 0;
+}
+
+/* Left strips */
+.tvtp-left-strips {
+  display: flex;
+  flex-direction: column;
+  border-right: 3px solid #fff;
+}
+
+/* Center */
+.tvtp-center {
+  display: flex;
+  flex-direction: column;
+  border-right: 3px solid #fff;
+}
+
+.tvtp-bars {
+  flex: 1;
+  display: flex;
+  position: relative;
+  min-height: 0;
+}
+
+.tvtp-bar {
+  flex: 1;
+  position: relative;
+  border-right: 1px solid rgba(0, 0, 0, 0.2);
+}
+
+/* Initialising band */
+.tvtp-init-band {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(0, 0, 0, 0.88);
+  padding: 10px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-top: 2px solid #fff;
+  border-bottom: 2px solid #fff;
+  z-index: 2;
+}
+
+.tvtp-init-text {
+  font-family: 'Press Start 2P', cursive;
+  font-size: clamp(0.7rem, 2vw, 1.1rem);
+  color: #fff;
+  letter-spacing: 0.18em;
+  text-shadow: 0 0 12px rgba(255, 255, 255, 0.6);
+  animation: tvtp-blink 1.1s step-end infinite;
+}
+
+@keyframes tvtp-blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.35; }
+}
+
+/* Glitch interference lines */
+.tvtp-glitch-line {
+  position: absolute;
+  left: -4px;
+  right: -4px;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(200, 200, 255, 0.7) 20%,
+    rgba(255, 180, 220, 0.6) 50%,
+    rgba(180, 255, 220, 0.5) 80%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  z-index: 3;
+  pointer-events: none;
+  animation: tvtp-glitch-slide 3.2s linear infinite;
+}
+
+@keyframes tvtp-glitch-slide {
+  0%   { transform: translateX(0); }
+  25%  { transform: translateX(-6px); }
+  50%  { transform: translateX(4px); }
+  75%  { transform: translateX(-3px); }
+  100% { transform: translateX(0); }
+}
+
+/* Bottom gradient bar */
+.tvtp-gradient-bar {
+  height: 40px;
+  flex-shrink: 0;
+  background: linear-gradient(90deg, #000 0%, #888 40%, #fff 60%, #888 80%, #000 100%);
+  border-top: 2px solid #333;
+  border-bottom: 2px solid #333;
+}
+
+/* Bottom text row */
+.tvtp-bottom-text {
+  height: 72px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 16px;
+  background: #000;
+  border-top: 2px solid #333;
+}
+
+.tvtp-color-squares {
+  display: flex;
+  gap: 3px;
+  flex-shrink: 0;
+}
+
+.tvtp-kanji {
+  font-size: clamp(0.85rem, 2vw, 1.1rem);
+  color: #fff;
+  line-height: 1.2;
+  flex-shrink: 0;
+  font-weight: 700;
+}
+
+.tvtp-jp-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: clamp(0.65rem, 1.5vw, 0.9rem);
+  color: rgba(255, 255, 255, 0.85);
+  font-family: sans-serif;
+}
+
+/* Right panel */
+.tvtp-right {
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  gap: 0;
+}
+
+.tvtp-kr-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  background: #fff;
+  border-bottom: 2px solid #000;
+}
+
+.tvtp-kr-text span {
+  font-size: clamp(1.5rem, 4vw, 2.4rem);
+  font-weight: 900;
+  color: #000;
+  line-height: 1.1;
+  font-family: sans-serif;
+}
+
+.tvtp-right-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  background: #fff;
+  border-bottom: 2px solid #000;
+  flex-shrink: 0;
+}
+
+.tvtp-flag {
+  display: flex;
+  flex-direction: column;
+  width: 36px;
+  height: 24px;
+  border: 1px solid #000;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.tvtp-channel {
+  font-family: 'Press Start 2P', cursive;
+  font-size: clamp(1.2rem, 3vw, 2rem);
+  color: #000;
+  font-weight: 900;
+}
+
+.tvtp-right-stripes {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  height: 112px;
+}
+
+.tvtp-right-stripes > div {
+  flex: 1;
+}
+
+/* Progress strip */
+.tvtp-progress-track {
+  height: 5px;
+  background: #111;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.tvtp-progress-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  background: linear-gradient(90deg, #d400b4, #a000d4, #00c8d4, #00d44a, #b4d400);
+  transition: width 200ms ease;
+}

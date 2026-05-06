@@ -1,0 +1,134 @@
+.crt-scroll-list {
+  --crt-list-height: 70vh;
+  position: relative;
+}
+
+.crt-scroll-list__defs {
+  position: absolute;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.crt-scroll-list__viewport {
+  --crt-ghost-opacity: 0;
+  --crt-ghost-x: 0px;
+  --crt-ghost-y: 0px;
+  position: relative;
+  height: var(--crt-list-height);
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 2.5rem 1.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px / 56px;
+  background:
+    radial-gradient(circle at 50% 45%, rgba(255, 255, 255, 0.08), transparent 46%),
+    linear-gradient(180deg, rgba(16, 22, 31, 0.95), rgba(5, 8, 12, 0.985));
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.08),
+    inset 0 22px 48px rgba(255, 255, 255, 0.04),
+    inset 0 -28px 42px rgba(0, 0, 0, 0.4),
+    0 18px 44px rgba(0, 0, 0, 0.28);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(158, 198, 255, 0.45) rgba(255, 255, 255, 0.05);
+  isolation: isolate;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+.crt-scroll-list__viewport::-webkit-scrollbar {
+  width: 10px;
+}
+
+.crt-scroll-list__viewport::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.crt-scroll-list__viewport::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(158, 198, 255, 0.42);
+}
+
+.crt-scroll-list__surface {
+  position: relative;
+  z-index: 1;
+  transform: translateZ(0);
+}
+
+.crt-scroll-list__item {
+  --crt-item-scale: 1;
+  --crt-item-opacity: 0.92;
+  --crt-item-lift: 0px;
+  opacity: var(--crt-item-opacity);
+  text-shadow:
+    var(--crt-ghost-x) var(--crt-ghost-y) 0 rgba(164, 236, 255, var(--crt-ghost-opacity)),
+    calc(var(--crt-ghost-x) * -0.35) calc(var(--crt-ghost-y) * 0.55) 0 rgba(255, 96, 128, calc(var(--crt-ghost-opacity) * 0.55)),
+    0 0 12px rgba(164, 236, 255, calc(var(--crt-ghost-opacity) * 0.32));
+  transition:
+    opacity 220ms ease-out,
+    text-shadow 120ms linear;
+  will-change: opacity;
+}
+
+.crt-scroll-list__item-shell {
+  transform: translate3d(0, var(--crt-item-lift), 0) scale(var(--crt-item-scale));
+  transform-origin: center center;
+  transition: transform 260ms cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
+}
+
+.crt-scroll-list__item + .crt-scroll-list__item {
+  margin-top: 1rem;
+}
+
+.crt-scroll-list__glass,
+.crt-scroll-list__center-glow,
+.crt-scroll-list__rgb,
+.crt-scroll-list__scanlines,
+.crt-scroll-list__vignette {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.crt-scroll-list__glass {
+  z-index: 2;
+  background:
+    radial-gradient(ellipse at 50% -12%, rgba(255, 255, 255, 0.16), transparent 36%),
+    linear-gradient(115deg, rgba(255, 255, 255, 0.06), transparent 18%, transparent 82%, rgba(255, 255, 255, 0.03));
+  mix-blend-mode: screen;
+}
+
+.crt-scroll-list__center-glow {
+  z-index: 3;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(142, 214, 255, 0.14) 0%, rgba(142, 214, 255, 0.07) 15%, transparent 32%);
+  mix-blend-mode: screen;
+}
+
+.crt-scroll-list__rgb {
+  z-index: 4;
+  background:
+    linear-gradient(90deg, rgba(255, 60, 84, 0.035), transparent 24%, transparent 76%, rgba(68, 196, 255, 0.04));
+  mix-blend-mode: screen;
+}
+
+.crt-scroll-list__scanlines {
+  z-index: 5;
+  opacity: 0.2;
+  background:
+    repeating-linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.18) 0,
+      rgba(255, 255, 255, 0.18) 1px,
+      rgba(0, 0, 0, 0.02) 1px,
+      rgba(0, 0, 0, 0.02) 3px
+    );
+  mix-blend-mode: overlay;
+}
+
+.crt-scroll-list__vignette {
+  z-index: 6;
+  background:
+    radial-gradient(ellipse at center, transparent 42%, rgba(7, 10, 14, 0.14) 64%, rgba(7, 10, 14, 0.48) 84%, rgba(7, 10, 14, 0.84) 100%);
+}

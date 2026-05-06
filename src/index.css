@@ -1,0 +1,124 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&display=swap');
+
+@theme {
+  --color-nick-orange: #FF5C00;
+  --color-nick-yellow: #FFD200;
+  --color-nick-green: #97FF00;
+  --color-nick-magenta: #FF00E5;
+  --color-nick-cyan: #00E0FF;
+  --color-nick-purple: #8B00FF;
+  --color-nick-blue: #0066FF;
+  --color-nick-pink: #FF007A;
+  --color-nick-border-dark: #333333;
+}
+
+@layer components {
+  .nick-tab {
+    @apply relative h-full flex flex-col items-center justify-center px-3 transition-all duration-300 cursor-pointer overflow-hidden border-t-4 border-x-2 border-nick-border-dark rounded-t-2xl;
+  }
+  .nick-panel {
+    @apply border-2 border-nick-border-dark rounded-3xl overflow-hidden;
+    box-shadow: 4px 4px 0px 0px rgba(0,0,0,1);
+  }
+  .gloss-effect {
+    @apply relative overflow-hidden;
+  }
+  .gloss-effect::before {
+    content: '';
+    @apply absolute inset-0 pointer-events-none z-[1];
+    background: linear-gradient(180deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0) 50%);
+  }
+}
+
+:root {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  color-scheme: dark;
+  color: #f8fafc;
+  background-color: #0f172a;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  cursor: url('/cursor-default.svg') 0 0, default;
+}
+
+a,
+button,
+[role='button'],
+label[for],
+input[type='radio'],
+input[type='checkbox'],
+select,
+.hs-char-card,
+.hs-filter-radio {
+  cursor: url('/cursor-pointer.svg') 4 0, pointer;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  text-align: center;
+  border-inline: 1px solid var(--border);
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}
+
+h1,
+h2 {
+  font-family: var(--heading);
+  font-weight: 500;
+  color: var(--text-h);
+}
+
+h1 {
+  font-size: 56px;
+  letter-spacing: -1.68px;
+  margin: 32px 0;
+  @media (max-width: 1024px) {
+    font-size: 36px;
+    margin: 20px 0;
+  }
+}
+h2 {
+  font-size: 24px;
+  line-height: 118%;
+  letter-spacing: -0.24px;
+  margin: 0 0 8px;
+  @media (max-width: 1024px) {
+    font-size: 20px;
+  }
+}
+p {
+  margin: 0;
+}
+
+code,
+.counter {
+  font-family: var(--mono);
+  display: inline-flex;
+  border-radius: 4px;
+  color: var(--text-h);
+}
+
+code {
+  font-size: 15px;
+  line-height: 135%;
+  padding: 4px 8px;
+  background: var(--code-bg);
+}
