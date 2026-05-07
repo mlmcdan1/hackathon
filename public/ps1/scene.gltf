@@ -3237,79 +3237,79 @@
   ],
   "images": [
     {
-      "uri": "textures/ps1_controller_baseColor.jpeg"
+      "uri": "textures/ps1_controller_baseColor.webp"
     },
     {
-      "uri": "textures/ps1_controller_metallicRoughness.png"
+      "uri": "textures/ps1_controller_metallicRoughness.webp"
     },
     {
-      "uri": "textures/ps1_controller_normal.png"
+      "uri": "textures/ps1_controller_normal.webp"
     },
     {
-      "uri": "textures/ps1_body_mat_baseColor.jpeg"
+      "uri": "textures/ps1_body_mat_baseColor.webp"
     },
     {
-      "uri": "textures/ps1_body_mat_metallicRoughness.png"
+      "uri": "textures/ps1_body_mat_metallicRoughness.webp"
     },
     {
-      "uri": "textures/ps1_body_mat_normal.png"
+      "uri": "textures/ps1_body_mat_normal.webp"
     },
     {
-      "uri": "textures/ps1_details_mat_baseColor.png"
+      "uri": "textures/ps1_details_mat_baseColor.webp"
     },
     {
-      "uri": "textures/ps1_details_mat_metallicRoughness.png"
+      "uri": "textures/ps1_details_mat_metallicRoughness.webp"
     },
     {
-      "uri": "textures/ps1_details_mat_emissive.jpeg"
+      "uri": "textures/ps1_details_mat_emissive.webp"
     },
     {
-      "uri": "textures/ps1_details_mat_normal.png"
+      "uri": "textures/ps1_details_mat_normal.webp"
     },
     {
-      "uri": "textures/ps1_cable_mat_baseColor.jpeg"
+      "uri": "textures/ps1_cable_mat_baseColor.webp"
     },
     {
-      "uri": "textures/ps1_cable_mat_metallicRoughness.png"
+      "uri": "textures/ps1_cable_mat_metallicRoughness.webp"
     },
     {
-      "uri": "textures/ps1_cable_mat_normal.png"
+      "uri": "textures/ps1_cable_mat_normal.webp"
     },
     {
-      "uri": "textures/pvm_side_body_mat_baseColor.jpeg"
+      "uri": "textures/pvm_side_body_mat_baseColor.webp"
     },
     {
-      "uri": "textures/pvm_side_body_mat_metallicRoughness.png"
+      "uri": "textures/pvm_side_body_mat_metallicRoughness.webp"
     },
     {
-      "uri": "textures/pvm_side_body_mat_normal.png"
+      "uri": "textures/pvm_side_body_mat_normal.webp"
     },
     {
-      "uri": "textures/pvm_panel_and_more_mat_baseColor.jpeg"
+      "uri": "textures/pvm_panel_and_more_mat_baseColor.webp"
     },
     {
-      "uri": "textures/pvm_panel_and_more_mat_metallicRoughness.png"
+      "uri": "textures/pvm_panel_and_more_mat_metallicRoughness.webp"
     },
     {
-      "uri": "textures/pvm_panel_and_more_mat_normal.png"
+      "uri": "textures/pvm_panel_and_more_mat_normal.webp"
     },
     {
-      "uri": "textures/pvm_front_and_back_mat_baseColor.jpeg"
+      "uri": "textures/pvm_front_and_back_mat_baseColor.webp"
     },
     {
-      "uri": "textures/pvm_front_and_back_mat_metallicRoughness.png"
+      "uri": "textures/pvm_front_and_back_mat_metallicRoughness.webp"
     },
     {
-      "uri": "textures/pvm_front_and_back_mat_normal.png"
+      "uri": "textures/pvm_front_and_back_mat_normal.webp"
     },
     {
-      "uri": "textures/pvm_screen_and_details_mat_baseColor.png"
+      "uri": "textures/pvm_screen_and_details_mat_baseColor.webp"
     },
     {
-      "uri": "textures/pvm_screen_and_details_mat_metallicRoughness.png"
+      "uri": "textures/pvm_screen_and_details_mat_metallicRoughness.webp"
     },
     {
-      "uri": "textures/pvm_screen_and_details_mat_normal.png"
+      "uri": "textures/pvm_screen_and_details_mat_normal.webp"
     }
   ],
   "materials": [

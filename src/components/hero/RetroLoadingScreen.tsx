@@ -86,6 +86,7 @@ export default function RetroLoadingScreen({ progress, visible }: RetroLoadingSc
             display: 'flex',
             gap: 4,
             width: 'min(480px, 88vw)',
+            position: 'relative',
           }}
         >
           {BAR_COLORS.map((color, i) => (
@@ -100,6 +101,32 @@ export default function RetroLoadingScreen({ progress, visible }: RetroLoadingSc
               }}
             />
           ))}
+          {filledCells > 0 && (
+            <div
+              aria-hidden="true"
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: `${(filledCells / BAR_COLORS.length) * 100}%`,
+                height: '100%',
+                overflow: 'hidden',
+                pointerEvents: 'none',
+              }}
+            >
+              <div
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '25%',
+                  height: '100%',
+                  background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent)',
+                  animation: 'loading-shimmer 1.8s ease-in-out infinite',
+                }}
+              />
+            </div>
+          )}
         </div>
       </div>
     </div>

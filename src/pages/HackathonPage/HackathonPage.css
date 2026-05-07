@@ -5,6 +5,15 @@
   50% { opacity: 0; }
 }
 
+.retro-blink {
+  animation: retro-blink 1s step-end infinite;
+}
+
+@keyframes loading-shimmer {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(400%); }
+}
+
 @keyframes crt-off {
   0%   { transform: scaleY(1);     opacity: 1; }
   45%  { transform: scaleY(0.012); opacity: 1; }
