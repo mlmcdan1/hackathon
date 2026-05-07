@@ -80,7 +80,7 @@ export default function HackathonPage() {
   const navigate = useNavigate()
   const [useLightEffects] = useState(() => shouldUseLightEffects())
   const [enhanceHero, setEnhanceHero] = useState(false)
-  const [heroVisualReady, setHeroVisualReady] = useState(() => useLightEffects)
+  const [, setHeroVisualReady] = useState(() => useLightEffects)
   const [heroScrollProgress, setHeroScrollProgress] = useState(0)
   const [activeSection, setActiveSection] = useState(0)
   const [isTransitioning, setIsTransitioning] = useState(false)
