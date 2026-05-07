@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
 
 interface HackathonNavbarProps {
   activeSection: number
@@ -106,13 +107,13 @@ export default function HackathonNavbar({
 
             {menuOpen && (
               <div className="hackathon-nav__user-dropdown">
-                <a
+                <Link
                   className="hackathon-nav__menu-item"
-                  href="/profile"
+                  to="/profile"
                   onClick={() => setMenuOpen(false)}
                 >
                   Profile
-                </a>
+                </Link>
                 <div className="hackathon-nav__menu-divider" />
                 <button
                   type="button"

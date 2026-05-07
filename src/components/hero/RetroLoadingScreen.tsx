@@ -1,5 +1,3 @@
-import { useEffect, useState } from 'react'
-
 const BAR_COLORS = [
   '#7a0000', '#920000', '#ab0000', '#c40000',
   '#d42800', '#e04800', '#e86800', '#ef8800',
@@ -21,12 +19,7 @@ interface RetroLoadingScreenProps {
 }
 
 export default function RetroLoadingScreen({ progress, visible }: RetroLoadingScreenProps) {
-  const [exiting, setExiting] = useState(false)
   const filledCells = Math.round(progress * BAR_COLORS.length)
-
-  useEffect(() => {
-    if (!visible) setExiting(true)
-  }, [visible])
 
   return (
     <div
@@ -40,28 +33,11 @@ export default function RetroLoadingScreen({ progress, visible }: RetroLoadingSc
         alignItems: 'center',
         justifyContent: 'center',
         fontFamily: '"Press Start 2P", cursive',
-        opacity: exiting ? undefined : 1,
-        animation: exiting ? 'crt-off 0.62s ease-in forwards' : 'none',
+        opacity: visible ? 1 : 0,
+        transition: visible ? 'none' : 'opacity 0.55s ease',
         pointerEvents: visible ? 'auto' : 'none',
       }}
     >
-      {exiting && (
-        <div
-          style={{
-            position: 'absolute',
-            left: 0,
-            right: 0,
-            top: 'calc(50% - 1px)',
-            height: 2,
-            background: '#fff',
-            boxShadow: '0 0 18px 6px rgba(255,255,255,0.9), 0 0 40px 14px rgba(200,220,255,0.45)',
-            animation: 'crt-line-fade 0.7s ease-in forwards',
-            zIndex: 2,
-            pointerEvents: 'none',
-          }}
-        />
-      )}
-
       {STARS.map((s, i) => (
         <div
           key={i}
@@ -120,6 +96,7 @@ export default function RetroLoadingScreen({ progress, visible }: RetroLoadingSc
                 height: 32,
                 background: i < filledCells ? color : '#111',
                 border: '1px solid #2a2a2a',
+                transition: 'background 0.1s ease',
               }}
             />
           ))}

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
 import './TvTestPatternScreen.css'
 
 interface Props {
@@ -89,11 +89,7 @@ function StaticCanvas() {
 }
 
 export default function TvTestPatternScreen({ progress, visible }: Props) {
-  const [exiting, setExiting] = useState(false)
-
-  useEffect(() => {
-    if (!visible) setExiting(true)
-  }, [visible])
+  const exiting = !visible
 
   return (
     <div className={`tvtp-root${exiting ? ' tvtp-root--exit' : ''}`}>

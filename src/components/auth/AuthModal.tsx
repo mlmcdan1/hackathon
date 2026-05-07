@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { supabase } from '../../lib/supabase'
+import { isSupabaseConfigured, supabase } from '../../lib/supabase'
 import './AuthModal.css'
 
 interface AuthModalProps {
@@ -25,6 +25,11 @@ export default function AuthModal({ onClose }: AuthModalProps) {
     e.preventDefault()
     setError('')
     setInfo('')
+
+    if (!supabase || !isSupabaseConfigured) {
+      setError('Authentication is not configured for this deployment yet.')
+      return
+    }
 
     if (mode === 'register' && password !== confirm) {
       setError('Passwords do not match.')
@@ -161,6 +166,10 @@ export default function AuthModal({ onClose }: AuthModalProps) {
           <button type="submit" className="auth-submit" disabled={loading}>
             {loading ? 'Please wait...' : mode === 'signin' ? 'Sign in' : 'Register account'}
           </button>
+
+          {!isSupabaseConfigured && (
+            <p className="auth-info">Sign-in is disabled until Supabase environment variables are configured.</p>
+          )}
 
           {!info && (
             <p className="auth-toggle">

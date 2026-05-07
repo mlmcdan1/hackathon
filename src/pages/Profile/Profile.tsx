@@ -22,7 +22,7 @@ import {
   X,
   Zap,
 } from 'lucide-react'
-import { supabase } from '../../lib/supabase'
+import { isSupabaseConfigured, supabase } from '../../lib/supabase'
 import './Profile.css'
 
 type ActiveTab =
@@ -226,25 +226,28 @@ export default function Profile() {
   const [savedProfile, setSavedProfile] = useState<ProfileState>(draftProfile)
 
   useEffect(() => {
+    if (!supabase || !isSupabaseConfigured) return
+
+    const syncProfileName = (nextSession: Session | null) => {
+      const derivedName = formatNameFromSession(nextSession)
+      setDraftProfile((current) => ({ ...current, name: derivedName }))
+      setSavedProfile((current) => ({ ...current, name: derivedName }))
+    }
+
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session ?? null)
+      syncProfileName(data.session ?? null)
     })
 
     const { data: listener } = supabase.auth.onAuthStateChange((_event, nextSession) => {
       setSession(nextSession)
+      syncProfileName(nextSession)
     })
 
     return () => {
       listener.subscription.unsubscribe()
     }
   }, [])
-
-  useEffect(() => {
-    const derivedName = formatNameFromSession(session)
-
-    setDraftProfile((current) => ({ ...current, name: derivedName }))
-    setSavedProfile((current) => ({ ...current, name: derivedName }))
-  }, [session])
 
   const avatarSeed = useMemo(() => draftProfile.name.replace(/\s+/g, ''), [draftProfile.name])
   const memberLabel = session?.user?.email ? 'Signed In' : 'Guest Mode'
@@ -292,7 +295,7 @@ export default function Profile() {
           <button type="button" className="profile-sidebar__secondary" onClick={() => navigate('/hackathons')}>
             Hackathons
           </button>
-          <button type="button" className="profile-sidebar__logout" onClick={() => supabase.auth.signOut()}>
+          <button type="button" className="profile-sidebar__logout" onClick={() => void supabase?.auth.signOut()}>
             <LogOut size={18} />
             <span>Logout</span>
           </button>

@@ -1,12 +1,10 @@
 import type { CSSProperties } from 'react'
-import { useEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { supabase } from '../../lib/supabase'
-import FogCanvas from '../../components/hero/FogCanvas'
-import HeroCanvas, { heroAssetPromise } from '../../components/hero/HeroCanvas'
+import { isSupabaseConfigured, supabase } from '../../lib/supabase'
 import HackathonNavbar from '../../components/navigation/HackathonNavbar'
-import TvTestPatternScreen from '../../components/hero/TvTestPatternScreen'
 import AuthModal from '../../components/auth/AuthModal'
+import RetroLoadingScreen from '../../components/hero/RetroLoadingScreen'
 import './HackathonPage.css'
 
 const HERO_TRIGGER_PROGRESS = 0.72
@@ -17,6 +15,21 @@ const HERO_ZOOM_DURATION_MS = 2600
 const HERO_EXIT_DELAY_MS = 2100
 const SECTION_TRANSITION_MS = 760
 const SECTION_SWITCH_DELTA = 90
+const HeroCanvas = lazy(() => import('../../components/hero/HeroCanvas'))
+const FogCanvas = lazy(() => import('../../components/hero/FogCanvas'))
+
+function shouldUseLightEffects() {
+  if (typeof window === 'undefined') return false
+
+  const nav = navigator as Navigator & { deviceMemory?: number }
+  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  const coarsePointer = window.matchMedia('(pointer: coarse)').matches
+  const compactViewport = window.innerWidth < 1100
+  const lowCpu = (navigator.hardwareConcurrency ?? 8) <= 4
+  const lowMemory = (nav.deviceMemory ?? 8) <= 4
+
+  return prefersReducedMotion || coarsePointer || compactViewport || lowCpu || lowMemory
+}
 
 function easeInOutCubic(t: number) {
   return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2
@@ -65,18 +78,23 @@ function canScrollInDirection(element: HTMLElement, deltaY: number) {
 
 export default function HackathonPage() {
   const navigate = useNavigate()
+  const [useLightEffects] = useState(() => shouldUseLightEffects())
+  const [enhanceHero, setEnhanceHero] = useState(false)
+  const [heroVisualReady, setHeroVisualReady] = useState(() => useLightEffects)
   const [heroScrollProgress, setHeroScrollProgress] = useState(0)
   const [activeSection, setActiveSection] = useState(0)
   const [isTransitioning, setIsTransitioning] = useState(false)
-  const [loaderProgress, setLoaderProgress] = useState(0)
-  const [loaderVisible, setLoaderVisible] = useState(true)
-  const [loaderMounted, setLoaderMounted] = useState(true)
-  const [heroReady, setHeroReady] = useState(false)
   const [showAuthModal, setShowAuthModal] = useState(false)
   const [userEmail, setUserEmail] = useState<string | null>(null)
   const [userName, setUserName] = useState<string | null>(null)
+  const [loadingMounted, setLoadingMounted] = useState(() => !useLightEffects)
+  const [loadingVisible, setLoadingVisible] = useState(true)
+  const [loadingProgress, setLoadingProgress] = useState(0)
+  const loadingProgressRef = useRef(0)
 
   useEffect(() => {
+    if (!supabase || !isSupabaseConfigured) return
+
     supabase.auth.getSession().then(({ data }) => {
       setUserEmail(data.session?.user.email ?? null)
       setUserName(data.session?.user.user_metadata?.first_name ?? null)
@@ -87,6 +105,25 @@ export default function HackathonPage() {
     })
     return () => listener.subscription.unsubscribe()
   }, [])
+  useEffect(() => {
+    if (useLightEffects) return
+    const start = performance.now()
+    const FILL_DURATION = 1200
+    let frameId: number
+    const tick = (now: number) => {
+      const t = Math.min((now - start) / FILL_DURATION, 1)
+      const eased = 1 - Math.pow(1 - t, 3)
+      setLoadingProgress(prev => {
+        const next = Math.max(prev, eased * 0.85)
+        loadingProgressRef.current = next
+        return next
+      })
+      if (t < 1) frameId = requestAnimationFrame(tick)
+    }
+    frameId = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(frameId)
+  }, [useLightEffects])
+
   const pageRef = useRef<HTMLDivElement>(null)
   const targetProgressRef = useRef(0)
   const displayProgressRef = useRef(0)
@@ -103,6 +140,31 @@ export default function HackathonPage() {
   }, [activeSection])
 
   useEffect(() => {
+    if (useLightEffects) return
+
+    const win = window as Window & {
+      requestIdleCallback?: (callback: () => void, options?: { timeout: number }) => number
+      cancelIdleCallback?: (id: number) => void
+    }
+
+    const startEnhancement = () => {
+      setEnhanceHero(true)
+    }
+
+    const idleId = win.requestIdleCallback?.(startEnhancement, { timeout: 1200 })
+    const timeoutId = window.setTimeout(startEnhancement, 900)
+
+    return () => {
+      if (idleId !== undefined) {
+        win.cancelIdleCallback?.(idleId)
+      }
+      window.clearTimeout(timeoutId)
+    }
+  }, [useLightEffects])
+
+  useEffect(() => {
+    if (useLightEffects) return
+
     let lastTimestamp = -1
 
     const animateProgress = (timestamp: number) => {
@@ -138,7 +200,7 @@ export default function HackathonPage() {
         window.cancelAnimationFrame(animationFrameRef.current)
       }
     }
-  }, [])
+  }, [useLightEffects])
 
   useEffect(() => {
     return () => {
@@ -148,44 +210,35 @@ export default function HackathonPage() {
     }
   }, [])
 
-  useEffect(() => {
-    let cancelled = false
-    const startTime = Date.now()
-
-    const interval = setInterval(() => {
-      if (cancelled) return
-      const elapsed = (Date.now() - startTime) / 1000
-      setLoaderProgress(Math.min(0.92, 1 - Math.exp(-elapsed * 1.0)))
-    }, 60)
-
-    heroAssetPromise.then(() => {
-      if (cancelled) return
-      clearInterval(interval)
-      setLoaderProgress(1)
-      setTimeout(() => {
-        if (cancelled) return
-        setLoaderVisible(false)
-        setTimeout(() => {
-          if (!cancelled) {
-            setLoaderMounted(false)
-            setHeroReady(true)
-          }
-        }, 700)
-      }, 320)
-    })
-
-    return () => {
-      cancelled = true
-      clearInterval(interval)
-    }
-  }, [])
-
-  const finishTransition = () => {
+  const finishTransition = useCallback(() => {
     isTransitioningRef.current = false
     setIsTransitioning(false)
-  }
+  }, [])
 
-  const navigateToHackathons = () => {
+  const handleHeroReady = useCallback(() => {
+    setHeroVisualReady(true)
+    const startProgress = loadingProgressRef.current
+    const startTime = performance.now()
+    const COMPLETE_MS = 450
+    const animateToFull = (now: number) => {
+      const t = Math.min((now - startTime) / COMPLETE_MS, 1)
+      const eased = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2
+      const next = startProgress + (1 - startProgress) * eased
+      loadingProgressRef.current = next
+      setLoadingProgress(next)
+      if (t < 1) {
+        requestAnimationFrame(animateToFull)
+      } else {
+        window.setTimeout(() => {
+          setLoadingVisible(false)
+          window.setTimeout(() => setLoadingMounted(false), 600)
+        }, 250)
+      }
+    }
+    requestAnimationFrame(animateToFull)
+  }, [])
+
+  const navigateToHackathons = useCallback(() => {
     if (isTransitioningRef.current) return
 
     isTransitioningRef.current = true
@@ -198,9 +251,9 @@ export default function HackathonPage() {
     transitionTimeoutRef.current = window.setTimeout(() => {
       navigate('/hackathons')
     }, HERO_EXIT_DELAY_MS)
-  }
+  }, [navigate])
 
-  const transitionToSection = (nextSection: number) => {
+  const transitionToSection = useCallback((nextSection: number) => {
     if (isTransitioningRef.current) return
     if (nextSection < 0 || nextSection > sectionLinks.length - 1) return
     if (nextSection === activeSectionRef.current) return
@@ -230,7 +283,7 @@ export default function HackathonPage() {
     }
 
     transitionTimeoutRef.current = window.setTimeout(finishTransition, SECTION_TRANSITION_MS)
-  }
+  }, [finishTransition])
 
   useEffect(() => {
     const page = pageRef.current
@@ -307,7 +360,7 @@ export default function HackathonPage() {
       page.removeEventListener('touchstart', onTouchStart)
       page.removeEventListener('touchmove', onTouchMove)
     }
-  }, [])
+  }, [navigateToHackathons, transitionToSection])
 
   const visibleHeroProgress = Math.min(heroScrollProgress, HERO_VISIBLE_PROGRESS)
 
@@ -319,7 +372,7 @@ export default function HackathonPage() {
   return (
     <div
       ref={pageRef}
-      className={`hackathon-page${isTransitioning ? ' hackathon-page--transitioning' : ''}${heroReady ? ' hackathon-page--hero-ready' : ''}`}
+      className={`hackathon-page${isTransitioning ? ' hackathon-page--transitioning' : ''}${!loadingMounted ? ' hackathon-page--hero-ready' : ''}`}
       id="top"
       style={pageStyle}
     >
@@ -335,7 +388,7 @@ export default function HackathonPage() {
         userEmail={userEmail}
         userName={userName}
         onSignIn={() => setShowAuthModal(true)}
-        onSignOut={() => supabase.auth.signOut()}
+        onSignOut={() => void supabase?.auth.signOut()}
       />
 
       <div className="scene-viewport">
@@ -344,10 +397,41 @@ export default function HackathonPage() {
           aria-label="Hero section"
         >
           <div className="hero-stage">
-            <FogCanvas />
+            {!useLightEffects && enhanceHero && (
+              <Suspense fallback={null}>
+                <FogCanvas />
+              </Suspense>
+            )}
             <div className="hero-atmosphere hero-atmosphere--back" aria-hidden="true" />
             <div className="canvas-container">
-              <HeroCanvas scrollProgress={heroScrollProgress} />
+              {useLightEffects || !enhanceHero ? (
+                <div
+                  aria-hidden="true"
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    background: 'radial-gradient(circle at 50% 40%, rgba(255, 213, 125, 0.18), rgba(17, 13, 32, 0.92) 55%, #05030a 100%)',
+                  }}
+                />
+              ) : (
+                <Suspense
+                  fallback={
+                    <div
+                      aria-hidden="true"
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        background: 'radial-gradient(circle at 50% 40%, rgba(255, 213, 125, 0.18), rgba(17, 13, 32, 0.92) 55%, #05030a 100%)',
+                      }}
+                    />
+                  }
+                >
+                  <HeroCanvas
+                    scrollProgress={heroScrollProgress}
+                    onReady={handleHeroReady}
+                  />
+                </Suspense>
+              )}
             </div>
             <div className="hero-atmosphere hero-atmosphere--glow" aria-hidden="true" />
             <div className="hero-grain" aria-hidden="true" />
@@ -370,20 +454,22 @@ export default function HackathonPage() {
             </div>
 
             <div className="hero-atmosphere hero-atmosphere--front" aria-hidden="true" />
-            <FogCanvas overlay fogOpacity={0.6} />
+            {!useLightEffects && enhanceHero && (
+              <Suspense fallback={null}>
+                <FogCanvas overlay fogOpacity={0.45} />
+              </Suspense>
+            )}
           </div>
 
           <div className="scene-hint">Scroll or swipe to enter</div>
         </section>
 
       </div>
-
-      {loaderMounted && (
-        <TvTestPatternScreen progress={loaderProgress} visible={loaderVisible} />
-      )}
-
       {showAuthModal && (
         <AuthModal onClose={() => setShowAuthModal(false)} />
+      )}
+      {loadingMounted && (
+        <RetroLoadingScreen progress={loadingProgress} visible={loadingVisible} />
       )}
     </div>
   )

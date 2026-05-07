@@ -1,5 +1,4 @@
 import { useEffect, useRef } from 'react'
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { clone } from 'three/examples/jsm/utils/SkeletonUtils.js'
 import { Clock } from 'three/src/core/Clock.js'
 import { PerspectiveCamera } from 'three/src/cameras/PerspectiveCamera.js'
@@ -22,9 +21,11 @@ import { AdditiveBlending } from 'three/src/constants.js'
 import { MeshBasicMaterial } from 'three/src/materials/MeshBasicMaterial.js'
 import { MeshStandardMaterial } from 'three/src/materials/MeshStandardMaterial.js'
 import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js'
+import { heroAssetPromise } from './heroAsset'
 
 interface HeroCanvasProps {
   scrollProgress: number
+  onReady?: () => void
 }
 
 const HERO_CONFIG = {
@@ -49,8 +50,6 @@ const HERO_CONFIG = {
   screenZoomDistance: 2.2,
 }
 
-const heroModelLoader = new GLTFLoader()
-export const heroAssetPromise = heroModelLoader.loadAsync('/ps1/scene.gltf')
 void heroAssetPromise
 
 function getCachedHeroModel() {
@@ -156,12 +155,17 @@ function createGlareTexture() {
   return new CanvasTexture(canvas)
 }
 
-export default function HeroCanvas({ scrollProgress }: HeroCanvasProps) {
+export default function HeroCanvas({ scrollProgress, onReady }: HeroCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const overlayRef = useRef<HTMLVideoElement>(null)
+  const onReadyRef = useRef(onReady)
   const scrollProgressRef = useRef(scrollProgress)
   const isActiveRef = useRef(true)
   const animationFrameRef = useRef(0)
+
+  useEffect(() => {
+    onReadyRef.current = onReady
+  }, [onReady])
 
   useEffect(() => {
     scrollProgressRef.current = scrollProgress
@@ -177,8 +181,8 @@ export default function HeroCanvas({ scrollProgress }: HeroCanvasProps) {
     if (!overlayVideo) return
 
     const camera = new PerspectiveCamera(30, 1, 0.1, 1000)
-    const renderer = new WebGLRenderer({ antialias: true, alpha: true })
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5))
+    const renderer = new WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'low-power' })
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1))
     container.appendChild(renderer.domElement)
 
     const ambientLight = new AmbientLight('#ffeede', 0.95)
@@ -510,10 +514,12 @@ export default function HeroCanvas({ scrollProgress }: HeroCanvasProps) {
         })
         stageGroup.add(model)
         applyConfig()
+        onReadyRef.current?.()
         void overlayVideo.play().catch(() => {})
       })
       .catch((error: unknown) => {
         console.error('Failed to load PS1 hero model', error)
+        onReadyRef.current?.()
       })
 
     const animate = () => {

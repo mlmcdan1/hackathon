@@ -115,8 +115,8 @@ export default function FogCanvas({ overlay = false, fogOpacity = 1 }: FogCanvas
     const container = containerRef.current
     if (!container) return
 
-    const renderer = new WebGLRenderer({ antialias: false, alpha: overlay })
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5))
+    const renderer = new WebGLRenderer({ antialias: false, alpha: overlay, powerPreference: 'low-power' })
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1))
     
     // Guarantee true transparency for the overlay
     if (overlay) {
