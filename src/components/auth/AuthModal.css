@@ -132,6 +132,28 @@
   padding-top: 1px;
 }
 
+/* Password label row with forgot link */
+.auth-field__label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.auth-forgot-link {
+  color: #0000ee;
+  cursor: pointer;
+  text-decoration: underline;
+  font-size: 10px;
+}
+
+/* Forgot password description */
+.auth-forgot-desc {
+  font-size: 11px;
+  color: #000;
+  line-height: 1.4;
+  margin-bottom: 2px;
+}
+
 /* Toggle link */
 .auth-toggle {
   text-align: center;

@@ -34,7 +34,7 @@
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  cursor: pointer;
+  cursor: url('/cursor-pointer.svg') 4 0, pointer;
   border-top: 4px solid var(--color-nick-border-dark);
   border-right: 2px solid var(--color-nick-border-dark);
   border-left: 2px solid var(--color-nick-border-dark);
@@ -69,7 +69,6 @@
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  cursor: url('/cursor-default.svg') 0 0, default;
 }
 
 a,
@@ -81,7 +80,7 @@ input[type='checkbox'],
 select,
 .hs-char-card,
 .hs-filter-radio {
-  cursor: url('/cursor-pointer.svg') 4 0, pointer;
+  cursor: pointer;
 }
 
 html {

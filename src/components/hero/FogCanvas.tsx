@@ -157,6 +157,7 @@ export default function FogCanvas({ overlay = false, fogOpacity = 1 }: FogCanvas
     const startTime = performance.now()
     let frameId = 0
     let disposed = false
+    let visible = true
 
     const resize = () => {
       const w = container.clientWidth || 1
@@ -165,7 +166,6 @@ export default function FogCanvas({ overlay = false, fogOpacity = 1 }: FogCanvas
     }
 
     const handleMouseMove = (e: MouseEvent) => {
-      // Normalize mouse coordinates to -1 to +1
       uniforms.iMouse.value.set(
         (e.clientX / window.innerWidth) * 2 - 1,
         -(e.clientY / window.innerHeight) * 2 + 1
@@ -173,12 +173,23 @@ export default function FogCanvas({ overlay = false, fogOpacity = 1 }: FogCanvas
     }
 
     const animate = () => {
-      if (disposed) return
+      if (disposed || !visible) return
       frameId = requestAnimationFrame(animate)
-      // Make overlay drift slightly faster for parallax depth
       uniforms.iTime.value = ((performance.now() - startTime) / 1000) * (overlay ? 1.1 : 0.8)
       renderer.render(scene, camera)
     }
+
+    // Pause the rAF loop when the canvas is off-screen — the fog shader is
+    // expensive and there's no reason to run it while the hero is not visible.
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        const wasVisible = visible
+        visible = entry.isIntersecting
+        if (visible && !wasVisible && !disposed) animate()
+      },
+      { threshold: 0 }
+    )
+    io.observe(container)
 
     resize()
     animate()
@@ -187,6 +198,7 @@ export default function FogCanvas({ overlay = false, fogOpacity = 1 }: FogCanvas
 
     return () => {
       disposed = true
+      io.disconnect()
       cancelAnimationFrame(frameId)
       window.removeEventListener('mousemove', handleMouseMove)
       window.removeEventListener('resize', resize)
@@ -198,5 +210,5 @@ export default function FogCanvas({ overlay = false, fogOpacity = 1 }: FogCanvas
 
   // Overlay gets a higher z-index to float over the 3D canvas and text
   const zIndex = overlay ? 50 : -10
-  return <div ref={containerRef} style={{ position: 'fixed', inset: 0, zIndex, opacity: fogOpacity, transition: 'opacity 760ms cubic-bezier(0.2, 0.84, 0.24, 1)', pointerEvents: 'none' }} aria-hidden="true" />
+  return <div ref={containerRef} style={{ position: 'absolute', inset: 0, zIndex, opacity: fogOpacity, transition: 'opacity 760ms cubic-bezier(0.2, 0.84, 0.24, 1)', pointerEvents: 'none' }} aria-hidden="true" />
 }

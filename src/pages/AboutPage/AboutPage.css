@@ -1,0 +1,9 @@
+.about-page {
+  min-height: 100vh;
+  background: #05030a;
+  color: #e2e8f0;
+}
+
+.about-page__content {
+  padding-top: 84px;
+}

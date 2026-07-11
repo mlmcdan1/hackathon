@@ -1,110 +1,168 @@
 import type { CSSProperties } from 'react'
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import claudeRetroPC from '../../assets/ClaudeRetroPC.jpeg'
+import computerIcon from '../../assets/ComputerIcon.png'
+import Lenis from 'lenis'
+import { gsap } from 'gsap'
+import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { isSupabaseConfigured, supabase } from '../../lib/supabase'
 import HackathonNavbar from '../../components/navigation/HackathonNavbar'
+import GameboysSection from '../../components/gameboys/GameboysSection'
+import GlitchySection from '../../components/glitchy/GlitchySection'
 import AuthModal from '../../components/auth/AuthModal'
 import RetroLoadingScreen from '../../components/hero/RetroLoadingScreen'
 import './HackathonPage.css'
 
-const HERO_TRIGGER_PROGRESS = 0.72
-const HERO_VISIBLE_PROGRESS = 0.78
-const PROGRESS_LERP = 0.08
-const PROGRESS_SNAP = 0.0015
-const HERO_ZOOM_DURATION_MS = 2600
-const HERO_EXIT_DELAY_MS = 2100
-const SECTION_TRANSITION_MS = 760
-const SECTION_SWITCH_DELTA = 90
+gsap.registerPlugin(ScrollTrigger)
+
 const HeroCanvas = lazy(() => import('../../components/hero/HeroCanvas'))
 const FogCanvas = lazy(() => import('../../components/hero/FogCanvas'))
 
+
 function shouldUseLightEffects() {
   if (typeof window === 'undefined') return false
-
   const nav = navigator as Navigator & { deviceMemory?: number }
   const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
   const coarsePointer = window.matchMedia('(pointer: coarse)').matches
   const compactViewport = window.innerWidth < 1100
   const lowCpu = (navigator.hardwareConcurrency ?? 8) <= 4
   const lowMemory = (nav.deviceMemory ?? 8) <= 4
-
   return prefersReducedMotion || coarsePointer || compactViewport || lowCpu || lowMemory
 }
 
-function easeInOutCubic(t: number) {
-  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2
-}
 
-const sectionLinks = [
-  { label: 'Overview', index: 0 },
-  { label: 'Hackathons', index: 1 },
+const STATS = [
+  { value: 47, prefix: '', suffix: '', label: 'Builders' },
+  { value: 6, prefix: '', suffix: '', label: 'Events' },
+  { value: 12, prefix: '$', suffix: 'K', label: 'In Prizes' },
+  { value: 14, prefix: '', suffix: '', label: 'Teams' },
 ]
 
 
-function getSceneState(sceneIndex: number, activeSection: number) {
-  if (sceneIndex === activeSection) return 'active'
-  if (sceneIndex < activeSection) return 'before'
-  return 'after'
+
+// Pre-computed so positions are stable across renders
+const MK_EMBERS = Array.from({ length: 28 }, (_, i) => ({
+  left: `${((i * 37 + Math.sin(i * 2.3) * 400 + 5000) % 96) + 2}%`,
+  bottom: `${((i * 23 + Math.cos(i * 1.7) * 300 + 3000) % 85) + 5}%`,
+  width: `${1 + (i % 3)}px`,
+  height: `${1 + (i % 3)}px`,
+  animationDelay: `${(i * 0.38) % 5}s`,
+  animationDuration: `${2.2 + (i * 0.19) % 2.8}s`,
+} as CSSProperties))
+
+function StatCounter({
+  value,
+  prefix,
+  suffix,
+  label,
+  revealed,
+}: {
+  value: number
+  prefix: string
+  suffix: string
+  label: string
+  revealed: boolean
+}) {
+  const [display, setDisplay] = useState(0)
+
+  useEffect(() => {
+    if (!revealed) return
+    let frame = 0
+    const total = 80
+    const tick = () => {
+      frame++
+      const t = Math.min(frame / total, 1)
+      const eased = 1 - Math.pow(1 - t, 3)
+      setDisplay(Math.round(value * eased))
+      if (frame < total) requestAnimationFrame(tick)
+    }
+    const id = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(id)
+  }, [revealed, value])
+
+  return (
+    <div className="hp-stat">
+      <span className="hp-stat__val">
+        {prefix}{display}{suffix}
+      </span>
+      <span className="hp-stat__lbl">{label}</span>
+    </div>
+  )
 }
 
-function findScrollableAncestor(target: EventTarget | null, boundary: HTMLElement) {
-  if (!(target instanceof Element)) return null
-
-  let current: HTMLElement | null = target as HTMLElement
-
-  while (current && current !== boundary) {
-    const style = window.getComputedStyle(current)
-    const overflowY = style.overflowY === 'visible' ? style.overflow : style.overflowY
-    const canScroll = (overflowY === 'auto' || overflowY === 'scroll') && current.scrollHeight > current.clientHeight + 1
-
-    if (canScroll) return current
-    current = current.parentElement
-  }
-
-  return null
-}
-
-function canScrollInDirection(element: HTMLElement, deltaY: number) {
-  if (deltaY > 0) {
-    return element.scrollTop + element.clientHeight < element.scrollHeight - 1
-  }
-
-  if (deltaY < 0) {
-    return element.scrollTop > 1
-  }
-
-  return false
-}
-
-export default function HackathonPage() {
+export default function Homepage() {
   const navigate = useNavigate()
   const [useLightEffects] = useState(() => shouldUseLightEffects())
   const [enhanceHero, setEnhanceHero] = useState(false)
-  const [, setHeroVisualReady] = useState(() => useLightEffects)
-  const [heroScrollProgress, setHeroScrollProgress] = useState(0)
-  const [activeSection, setActiveSection] = useState(0)
-  const [isTransitioning, setIsTransitioning] = useState(false)
   const [showAuthModal, setShowAuthModal] = useState(false)
   const [userEmail, setUserEmail] = useState<string | null>(null)
   const [userName, setUserName] = useState<string | null>(null)
+  const [isAdmin, setIsAdmin] = useState(false)
   const [loadingMounted, setLoadingMounted] = useState(() => !useLightEffects)
   const [loadingVisible, setLoadingVisible] = useState(true)
   const [loadingProgress, setLoadingProgress] = useState(0)
   const loadingProgressRef = useRef(0)
+  const [revealed, setRevealed] = useState<Set<string>>(new Set())
 
+  const [navHidden, setNavHidden] = useState(false)
+  const [navScrolled, setNavScrolled] = useState(false)
+  const navScrolledRef = useRef(false)
+  const navHiddenRef  = useRef(false)
+
+  // Lenis smooth scroll, synced to GSAP ticker + navbar hide/show
+  useEffect(() => {
+    const lenis = new Lenis({ lerp: 0.12, smoothWheel: true })
+    let lastY = 0
+    lenis.on('scroll', ({ scroll }: { scroll: number }) => {
+      ScrollTrigger.update()
+      const delta    = scroll - lastY
+      lastY          = scroll
+
+      // Only call setState when the boolean actually flips — avoids re-renders on every tick
+      const scrolled = scroll > 60
+      if (scrolled !== navScrolledRef.current) {
+        navScrolledRef.current = scrolled
+        setNavScrolled(scrolled)
+      }
+
+      const hidden = scroll > 80 && delta > 0
+      if (hidden !== navHiddenRef.current) {
+        navHiddenRef.current = hidden
+        setNavHidden(hidden)
+      }
+    })
+    gsap.ticker.add((time) => lenis.raf(time * 1000))
+    gsap.ticker.lagSmoothing(0)
+    return () => {
+      lenis.destroy()
+    }
+  }, [])
+
+  async function resolveAdmin(session: import('@supabase/supabase-js').Session | null) {
+    if (!session || !supabase) { setIsAdmin(false); return }
+    if (session.user.email === import.meta.env.VITE_ADMIN_EMAIL) { setIsAdmin(true); return }
+    const { data } = await supabase.from('admins').select('id').eq('user_id', session.user.id).maybeSingle()
+    setIsAdmin(!!data)
+  }
+
+  // Auth
   useEffect(() => {
     if (!supabase || !isSupabaseConfigured) return
-
     supabase.auth.getSession().then(({ data }) => {
       setUserEmail(data.session?.user.email ?? null)
       setUserName(data.session?.user.user_metadata?.first_name ?? null)
+      resolveAdmin(data.session ?? null)
     })
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
       setUserEmail(session?.user.email ?? null)
       setUserName(session?.user.user_metadata?.first_name ?? null)
+      resolveAdmin(session ?? null)
     })
     return () => listener.subscription.unsubscribe()
   }, [])
+
+  // Loading bar fill
   useEffect(() => {
     if (useLightEffects) return
     const start = performance.now()
@@ -124,99 +182,122 @@ export default function HackathonPage() {
     return () => cancelAnimationFrame(frameId)
   }, [useLightEffects])
 
-  const pageRef = useRef<HTMLDivElement>(null)
-  const targetProgressRef = useRef(0)
-  const displayProgressRef = useRef(0)
-  const activeSectionRef = useRef(0)
-  const isTransitioningRef = useRef(false)
-  const animationFrameRef = useRef(0)
-  const transitionTimeoutRef = useRef<number | null>(null)
-  const sectionDeltaRef = useRef(0)
-  const zoomStartTimeRef = useRef(-1)
-  const zoomStartProgressRef = useRef(0)
-
-  useEffect(() => {
-    activeSectionRef.current = activeSection
-  }, [activeSection])
-
+  // Delay heavy 3D until idle
   useEffect(() => {
     if (useLightEffects) return
-
     const win = window as Window & {
-      requestIdleCallback?: (callback: () => void, options?: { timeout: number }) => number
+      requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number
       cancelIdleCallback?: (id: number) => void
     }
-
-    const startEnhancement = () => {
-      setEnhanceHero(true)
-    }
-
-    const idleId = win.requestIdleCallback?.(startEnhancement, { timeout: 1200 })
-    const timeoutId = window.setTimeout(startEnhancement, 900)
-
+    const start = () => setEnhanceHero(true)
+    const idleId = win.requestIdleCallback?.(start, { timeout: 1200 })
+    const timeoutId = window.setTimeout(start, 900)
     return () => {
-      if (idleId !== undefined) {
-        win.cancelIdleCallback?.(idleId)
-      }
+      if (idleId !== undefined) win.cancelIdleCallback?.(idleId)
       window.clearTimeout(timeoutId)
     }
   }, [useLightEffects])
 
+
+
+
+
+  // Global cursor-driven tilt for section 2 image
   useEffect(() => {
-    if (useLightEffects) return
-
-    let lastTimestamp = -1
-
-    const animateProgress = (timestamp: number) => {
-      if (lastTimestamp < 0) lastTimestamp = timestamp
-      const deltaMs = Math.min(timestamp - lastTimestamp, 100)
-      lastTimestamp = timestamp
-
-      let next: number
-
-      if (zoomStartTimeRef.current >= 0) {
-        const elapsed = timestamp - zoomStartTimeRef.current
-        const t = Math.min(elapsed / HERO_ZOOM_DURATION_MS, 1)
-        next = zoomStartProgressRef.current + (1 - zoomStartProgressRef.current) * easeInOutCubic(t)
-        if (t >= 1) zoomStartTimeRef.current = -1
-      } else {
-        const alpha = 1 - Math.pow(1 - PROGRESS_LERP, deltaMs / (1000 / 60))
-        const current = displayProgressRef.current
-        const target = targetProgressRef.current
-        const lerped = current + (target - current) * alpha
-        next = Math.abs(lerped - target) <= PROGRESS_SNAP ? target : lerped
-      }
-
-      displayProgressRef.current = next
-      setHeroScrollProgress(next)
-
-      animationFrameRef.current = window.requestAnimationFrame(animateProgress)
+    if (loadingMounted) return
+    const frame = document.querySelector('.hp-intro__img-frame') as HTMLElement | null
+    if (!frame) return
+    let curRotX = 0, curRotY = 0, tarRotX = 0, tarRotY = 0, raf: number
+    const onMove = (e: MouseEvent) => {
+      const nx = (e.clientX / window.innerWidth) * 2 - 1
+      const ny = (e.clientY / window.innerHeight) * 2 - 1
+      tarRotY =  nx * 12
+      tarRotX = -ny * 8
     }
-
-    animationFrameRef.current = window.requestAnimationFrame(animateProgress)
-
-    return () => {
-      if (animationFrameRef.current !== 0) {
-        window.cancelAnimationFrame(animationFrameRef.current)
-      }
+    const tick = () => {
+      curRotX += (tarRotX - curRotX) * 0.05
+      curRotY += (tarRotY - curRotY) * 0.05
+      frame.style.transform = `perspective(900px) translateY(-15%) rotate(-4deg) rotateX(${curRotX}deg) rotateY(${curRotY}deg)`
+      raf = requestAnimationFrame(tick)
     }
-  }, [useLightEffects])
+    window.addEventListener('mousemove', onMove, { passive: true })
+    raf = requestAnimationFrame(tick)
+    return () => { window.removeEventListener('mousemove', onMove); cancelAnimationFrame(raf) }
+  }, [loadingMounted])
 
+  // Typewriter triggers when section 2 scrolls into view
   useEffect(() => {
-    return () => {
-      if (transitionTimeoutRef.current !== null) {
-        window.clearTimeout(transitionTimeoutRef.current)
-      }
-    }
-  }, [])
+    if (loadingMounted) return
+    const section = document.querySelector('.hp-intro')
+    if (!section) return
+    const obs = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) { section.classList.add('is-visible'); obs.disconnect() } },
+      { threshold: 0.25 }
+    )
+    obs.observe(section)
+    return () => obs.disconnect()
+  }, [loadingMounted])
 
-  const finishTransition = useCallback(() => {
-    isTransitioningRef.current = false
-    setIsTransitioning(false)
-  }, [])
+  // Section reveal observer + GSAP game-world animations
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      entries => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            const id = (entry.target as HTMLElement).dataset.section
+            if (id) setRevealed(prev => new Set([...prev, id]))
+          }
+        })
+      },
+      { threshold: 0.12 },
+    )
+    const els = document.querySelectorAll('[data-section]')
+    els.forEach(el => observer.observe(el))
+    return () => observer.disconnect()
+  }, [loadingMounted])
+
+  // GSAP scroll-driven game world animations
+  useEffect(() => {
+    if (loadingMounted) return // wait until loading screen is gone
+
+    const ctx = gsap.context(() => {
+
+
+      // ── MORTAL KOMBAT: stat values slam in one by one ──
+      gsap.from('.hp-stat', {
+        y: 60,
+        opacity: 0,
+        scale: 0.6,
+        duration: 0.5,
+        ease: 'back.out(2)',
+        stagger: 0.1,
+        scrollTrigger: {
+          trigger: '.hp-stats',
+          start: 'top 75%',
+          toggleActions: 'play none none none',
+        },
+      })
+
+      // MK screen flash on entry
+      gsap.from('.mk-fight-flash', {
+        duration: 0,
+        scrollTrigger: {
+          trigger: '.hp-stats',
+          start: 'top 75%',
+          toggleActions: 'play none none none',
+        },
+      })
+
+
+
+
+    })
+
+    return () => ctx.revert()
+  }, [loadingMounted])
+
 
   const handleHeroReady = useCallback(() => {
-    setHeroVisualReady(true)
     const startProgress = loadingProgressRef.current
     const startTime = performance.now()
     const COMPLETE_MS = 450
@@ -238,239 +319,133 @@ export default function HackathonPage() {
     requestAnimationFrame(animateToFull)
   }, [])
 
-  const navigateToHackathons = useCallback(() => {
-    if (isTransitioningRef.current) return
-
-    isTransitioningRef.current = true
-    setIsTransitioning(true)
-    sectionDeltaRef.current = 0
-    targetProgressRef.current = 1
-    zoomStartTimeRef.current = performance.now()
-    zoomStartProgressRef.current = displayProgressRef.current
-
-    transitionTimeoutRef.current = window.setTimeout(() => {
-      navigate('/hackathons')
-    }, HERO_EXIT_DELAY_MS)
-  }, [navigate])
-
-  const transitionToSection = useCallback((nextSection: number) => {
-    if (isTransitioningRef.current) return
-    if (nextSection < 0 || nextSection > sectionLinks.length - 1) return
-    if (nextSection === activeSectionRef.current) return
-
-    isTransitioningRef.current = true
-    setIsTransitioning(true)
-    sectionDeltaRef.current = 0
-
-    if (activeSectionRef.current === 0 && nextSection > 0) {
-      targetProgressRef.current = 1
-      zoomStartTimeRef.current = performance.now()
-      zoomStartProgressRef.current = displayProgressRef.current
-      transitionTimeoutRef.current = window.setTimeout(() => {
-        setActiveSection(nextSection)
-        window.setTimeout(finishTransition, SECTION_TRANSITION_MS)
-      }, HERO_EXIT_DELAY_MS)
-      return
-    }
-
-    setActiveSection(nextSection)
-
-    if (nextSection === 0) {
-      zoomStartTimeRef.current = -1
-      displayProgressRef.current = HERO_TRIGGER_PROGRESS + 0.04
-      setHeroScrollProgress(HERO_TRIGGER_PROGRESS + 0.04)
-      targetProgressRef.current = 0
-    }
-
-    transitionTimeoutRef.current = window.setTimeout(finishTransition, SECTION_TRANSITION_MS)
-  }, [finishTransition])
-
-  useEffect(() => {
-    const page = pageRef.current
-    if (!page) return
-
-    let touchStartY = 0
-
-    const onWheel = (event: WheelEvent) => {
-      if (isTransitioningRef.current) return
-
-      if (activeSectionRef.current === 0) {
-        event.preventDefault()
-        if (event.deltaY > 0) navigateToHackathons()
-        return
-      }
-
-      const scrollableAncestor = findScrollableAncestor(event.target, page)
-      if (scrollableAncestor && canScrollInDirection(scrollableAncestor, event.deltaY)) {
-        sectionDeltaRef.current = 0
-        return
-      }
-
-      event.preventDefault()
-
-      sectionDeltaRef.current += event.deltaY
-
-      if (sectionDeltaRef.current >= SECTION_SWITCH_DELTA) {
-        transitionToSection(activeSectionRef.current + 1)
-      } else if (sectionDeltaRef.current <= -SECTION_SWITCH_DELTA) {
-        transitionToSection(activeSectionRef.current - 1)
-      }
-    }
-
-    const onTouchStart = (event: TouchEvent) => {
-      touchStartY = event.touches[0]?.clientY ?? 0
-    }
-
-    const onTouchMove = (event: TouchEvent) => {
-      const currentY = event.touches[0]?.clientY ?? touchStartY
-      const deltaY = touchStartY - currentY
-      touchStartY = currentY
-      event.preventDefault()
-
-      if (isTransitioningRef.current) return
-
-      if (activeSectionRef.current === 0) {
-        event.preventDefault()
-        if (deltaY > 8) navigateToHackathons()
-        return
-      }
-
-      const scrollableAncestor = findScrollableAncestor(event.target, page)
-      if (scrollableAncestor && canScrollInDirection(scrollableAncestor, deltaY)) {
-        sectionDeltaRef.current = 0
-        return
-      }
-
-      sectionDeltaRef.current += deltaY
-      event.preventDefault()
-
-      if (sectionDeltaRef.current >= SECTION_SWITCH_DELTA) {
-        transitionToSection(activeSectionRef.current + 1)
-      } else if (sectionDeltaRef.current <= -SECTION_SWITCH_DELTA) {
-        transitionToSection(activeSectionRef.current - 1)
-      }
-    }
-
-    page.addEventListener('wheel', onWheel, { passive: false })
-    page.addEventListener('touchstart', onTouchStart, { passive: true })
-    page.addEventListener('touchmove', onTouchMove, { passive: false })
-
-    return () => {
-      page.removeEventListener('wheel', onWheel)
-      page.removeEventListener('touchstart', onTouchStart)
-      page.removeEventListener('touchmove', onTouchMove)
-    }
-  }, [navigateToHackathons, transitionToSection])
-
-  const visibleHeroProgress = Math.min(heroScrollProgress, HERO_VISIBLE_PROGRESS)
-
-  const pageStyle = {
-    '--hero-progress': visibleHeroProgress,
-    '--section-index': activeSection,
-  } as CSSProperties
-
   return (
-    <div
-      ref={pageRef}
-      className={`hackathon-page${isTransitioning ? ' hackathon-page--transitioning' : ''}${!loadingMounted ? ' hackathon-page--hero-ready' : ''}`}
-      id="top"
-      style={pageStyle}
-    >
-
+    <div className={`homepage hp-scrollable${!loadingMounted ? ' hackathon-page--hero-ready' : ''}`}>
       <HackathonNavbar
-        activeSection={activeSection}
-        hidden={false}
-        links={sectionLinks}
-        onNavigate={(sectionIndex) => {
-          if (sectionIndex === 1) navigateToHackathons()
-          else transitionToSection(sectionIndex)
-        }}
+        activeSection={0}
+        hidden={navHidden}
+        scrolled={navScrolled}
+        links={[{ label: 'Overview', index: 0 }, { label: 'Hackathons', index: 1 }]}
+        onNavigate={(i) => { if (i === 1) navigate('/hackathons') }}
         userEmail={userEmail}
         userName={userName}
+        isAdmin={isAdmin}
         onSignIn={() => setShowAuthModal(true)}
         onSignOut={() => void supabase?.auth.signOut()}
       />
 
-      <div className="scene-viewport">
+      {/* ── Hero sticky scroll space ── */}
+      {/* ── Hero — full viewport, TV model, no zoom ── */}
+      <div className="hp-hero">
+        {!useLightEffects && enhanceHero && (
+          <Suspense fallback={null}><FogCanvas /></Suspense>
+        )}
+        <div className="hero-atmosphere hero-atmosphere--back" aria-hidden="true" />
+        <div className="canvas-container">
+          {useLightEffects || !enhanceHero ? (
+            <div aria-hidden="true" style={{ width: '100%', height: '100%', background: 'radial-gradient(circle at 50% 40%, rgba(255, 213, 125, 0.18), rgba(17, 13, 32, 0.92) 55%, #05030a 100%)' }} />
+          ) : (
+            <Suspense fallback={<div aria-hidden="true" style={{ width: '100%', height: '100%', background: 'radial-gradient(circle at 50% 40%, rgba(255, 213, 125, 0.18), rgba(17, 13, 32, 0.92) 55%, #05030a 100%)' }} />}>
+              <HeroCanvas onReady={handleHeroReady} />
+            </Suspense>
+          )}
+        </div>
+        <div className="hero-atmosphere hero-atmosphere--glow" aria-hidden="true" />
+        <div className="hero-grain" aria-hidden="true" />
+        <div className="hero-content">
+          <h1 className="hero-title-sr">Augusta Dev Hackathon 2026</h1>
+          <img className="hero-title-art" src="/AugustaDevHeader.png" alt="Augusta Dev" />
+          <p className="tagline">Think. Create. Innovate.</p>
+          <p className="hero-body">Connect with a community of innovators and create without limits. Your project starts here.</p>
+          <button className="cta-button" type="button" onClick={() => document.getElementById('hp-world')?.scrollIntoView({ behavior: 'smooth' })}>
+            Explore Events
+          </button>
+        </div>
+        <div className="hero-atmosphere hero-atmosphere--front" aria-hidden="true" />
+        {!useLightEffects && enhanceHero && (
+          <Suspense fallback={null}><FogCanvas overlay fogOpacity={0.45} /></Suspense>
+        )}
+        <div className="hp-scroll-hint" aria-hidden="true">
+          <span>Scroll to explore</span>
+          <div className="hp-scroll-hint__arrow" />
+        </div>
+      </div>
+
+
+      {/* ── Explore section ── */}
+      {/* ── Section 2: Intro — large right photo, text bleeds over it from left ── */}
+      <section className="hp-intro">
+        <div className="hp-intro__img-frame" aria-hidden="true">
+          <img src={claudeRetroPC} alt="" className="hp-intro__img" />
+        </div>
+        <div className="hp-intro__content">
+          <span className="hp-intro__eyebrow">
+            <span className="hp-intro__typed">AUGUSTA, GA</span><span className="hp-intro__cursor">_</span>
+          </span>
+          <h2 className="hp-intro__heading">Where Builders<br />Become Legends.</h2>
+        </div>
+      </section>
+
+      {/* ── Section 3: Explore Hackathons ── */}
+      <section className="hp-explore">
+        {/* Floating game elements */}
+        <span className="hp-explore__float hp-explore__float--1" aria-hidden="true">🎮</span>
+        <span className="hp-explore__float hp-explore__float--2" aria-hidden="true">🏆</span>
+        <span className="hp-explore__float hp-explore__float--3" aria-hidden="true">⚡</span>
+        <span className="hp-explore__float hp-explore__float--4" aria-hidden="true">🎲</span>
+        <span className="hp-explore__float hp-explore__float--5" aria-hidden="true">🕹️</span>
+        <img src={computerIcon} className="hp-explore__float hp-explore__float--6" alt="" aria-hidden="true" />
+
+        {/* Center content */}
+        <div className="hp-explore__center">
+          <p className="hp-explore__eyebrow">Augusta Dev</p>
+          <h2 className="hp-explore__heading">Explore<br />Hackathons</h2>
+          <button type="button" className="hp-explore__cta" onClick={() => navigate('/hackathons')}>
+            EXPLORE
+          </button>
+        </div>
+      </section>
+
+      {/* ── Retro world sections ── */}
+      <div id="hp-world" className="hp-world">
+        <GameboysSection />
+        <GlitchySection />
+
+        {/* Stats bar — MORTAL KOMBAT — hidden, not deleted */}
+        {false && (
         <section
-          className={`scene-section hero-scene scene-section--${getSceneState(0, activeSection)}`}
-          aria-label="Hero section"
+          className={`hp-stats${revealed.has('stats') ? ' hp-revealed' : ''}`}
+          data-section="stats"
         >
-          <div className="hero-stage">
-            {!useLightEffects && enhanceHero && (
-              <Suspense fallback={null}>
-                <FogCanvas />
-              </Suspense>
-            )}
-            <div className="hero-atmosphere hero-atmosphere--back" aria-hidden="true" />
-            <div className="canvas-container">
-              {useLightEffects || !enhanceHero ? (
-                <div
-                  aria-hidden="true"
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    background: 'radial-gradient(circle at 50% 40%, rgba(255, 213, 125, 0.18), rgba(17, 13, 32, 0.92) 55%, #05030a 100%)',
-                  }}
-                />
-              ) : (
-                <Suspense
-                  fallback={
-                    <div
-                      aria-hidden="true"
-                      style={{
-                        width: '100%',
-                        height: '100%',
-                        background: 'radial-gradient(circle at 50% 40%, rgba(255, 213, 125, 0.18), rgba(17, 13, 32, 0.92) 55%, #05030a 100%)',
-                      }}
-                    />
-                  }
-                >
-                  <HeroCanvas
-                    scrollProgress={heroScrollProgress}
-                    onReady={handleHeroReady}
-                  />
-                </Suspense>
-              )}
-            </div>
-            <div className="hero-atmosphere hero-atmosphere--glow" aria-hidden="true" />
-            <div className="hero-grain" aria-hidden="true" />
-
-            <div className="hero-content">
-              <h1 className="hero-title-sr">Augusta Dev Hackathon 2026</h1>
-              <img
-                className="hero-title-art"
-                src="/AugustaDevHeader.png"
-                alt="Augusta Dev"
-              />
-              <p className="tagline">Think. Create. Innovate.</p>
-              <p className="hero-body">
-                Connect with a community of innovators and create without limits.
-                Your project starts here.
-              </p>
-              <button className="cta-button" type="button" onClick={navigateToHackathons}>
-                Enter Hackathon
-              </button>
-            </div>
-
-            <div className="hero-atmosphere hero-atmosphere--front" aria-hidden="true" />
-            {!useLightEffects && enhanceHero && (
-              <Suspense fallback={null}>
-                <FogCanvas overlay fogOpacity={0.45} />
-              </Suspense>
-            )}
+          <div className="mk-arena" aria-hidden="true">
+            {MK_EMBERS.map((style, i) => <div key={i} className="mk-ember" style={style} />)}
           </div>
-
-          <div className="scene-hint">Scroll or swipe to enter</div>
+          <div className="mk-fight-flash" aria-hidden="true">FIGHT!</div>
+          <div className="hp-stats__scanlines" aria-hidden="true" />
+          <div className="hp-stats__inner">
+            {STATS.map(s => (
+              <StatCounter
+                key={s.label}
+                value={s.value}
+                prefix={s.prefix}
+                suffix={s.suffix}
+                label={s.label}
+                revealed={revealed.has('stats')}
+              />
+            ))}
+          </div>
         </section>
+        )}
+
+
+
+
 
       </div>
-      {showAuthModal && (
-        <AuthModal onClose={() => setShowAuthModal(false)} />
-      )}
-      {loadingMounted && (
-        <RetroLoadingScreen progress={loadingProgress} visible={loadingVisible} />
-      )}
+
+
+      {showAuthModal && <AuthModal onClose={() => setShowAuthModal(false)} />}
+      {loadingMounted && <RetroLoadingScreen progress={loadingProgress} visible={loadingVisible} />}
     </div>
   )
 }

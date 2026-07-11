@@ -24,7 +24,6 @@ import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { heroAssetPromise } from './heroAsset'
 
 interface HeroCanvasProps {
-  scrollProgress: number
   onReady?: () => void
 }
 
@@ -56,15 +55,6 @@ function getCachedHeroModel() {
   return heroAssetPromise.then((asset: GLTF) => clone(asset.scene) as Group)
 }
 
-function easeInOutCubic(value: number) {
-  return value < 0.5
-    ? 4 * value * value * value
-    : 1 - Math.pow(-2 * value + 2, 3) / 2
-}
-
-function clamp(value: number, min: number, max: number) {
-  return Math.min(Math.max(value, min), max)
-}
 
 function normalizeModel(model: Group) {
   const bounds = new Box3().setFromObject(model)
@@ -155,21 +145,18 @@ function createGlareTexture() {
   return new CanvasTexture(canvas)
 }
 
-export default function HeroCanvas({ scrollProgress, onReady }: HeroCanvasProps) {
+export default function HeroCanvas({ onReady }: HeroCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const overlayRef = useRef<HTMLVideoElement>(null)
   const onReadyRef = useRef(onReady)
-  const scrollProgressRef = useRef(scrollProgress)
   const isActiveRef = useRef(true)
   const animationFrameRef = useRef(0)
+  const mouseTargetRef = useRef({ x: 0, y: 0 })
+  const mouseSmoothedRef = useRef({ x: 0, y: 0 })
 
   useEffect(() => {
     onReadyRef.current = onReady
   }, [onReady])
-
-  useEffect(() => {
-    scrollProgressRef.current = scrollProgress
-  }, [scrollProgress])
 
   useEffect(() => {
     const container = containerRef.current
@@ -215,6 +202,7 @@ export default function HeroCanvas({ scrollProgress, onReady }: HeroCanvasProps)
     let contactShadowMesh: Mesh | null = null
     let consoleShadowMesh: Mesh | null = null
     let disposed = false
+    let screenMat: MeshStandardMaterial | null = null
     const startCameraPosition = new Vector3()
     const startLookAt = new Vector3(HERO_CONFIG.lookAtX, HERO_CONFIG.lookAtY, HERO_CONFIG.lookAtZ)
     const screenWorldPosition = new Vector3()
@@ -222,7 +210,6 @@ export default function HeroCanvas({ scrollProgress, onReady }: HeroCanvasProps)
     const screenWorldNormal = new Vector3()
     const screenGlowPosition = new Vector3()
     const flickerAnchor = new Vector3()
-    const zoomCameraPosition = new Vector3()
     const lookAtTarget = new Vector3()
     const cameraPosition = new Vector3()
     const clock = new Clock()
@@ -319,17 +306,16 @@ export default function HeroCanvas({ scrollProgress, onReady }: HeroCanvasProps)
     scene.add(consoleShadowMesh)
 
     const applyConfig = () => {
-      const progress = easeInOutCubic(scrollProgressRef.current)
-      const zoomProgress = easeInOutCubic(clamp(progress / 0.84, 0, 1))
-      stageGroup.position.set(
-        HERO_CONFIG.stageX,
-        HERO_CONFIG.stageY + (HERO_CONFIG.stageZoomY - HERO_CONFIG.stageY) * zoomProgress,
-        HERO_CONFIG.stageZ + (HERO_CONFIG.stageZoomZ - HERO_CONFIG.stageZ) * zoomProgress,
-      )
-      stageGroup.rotation.y = HERO_CONFIG.stageRotY + (HERO_CONFIG.stageZoomRotY - HERO_CONFIG.stageRotY) * zoomProgress
+      const envAlpha = 1
+
+      crtOverlayMaterial.opacity = 0.35
+      glareMaterial.opacity = 0.25
+
+      stageGroup.position.set(HERO_CONFIG.stageX, HERO_CONFIG.stageY, HERO_CONFIG.stageZ)
+      stageGroup.rotation.y = HERO_CONFIG.stageRotY
 
       if (model) {
-        model.scale.setScalar(HERO_CONFIG.modelScale + (HERO_CONFIG.modelZoomScale - HERO_CONFIG.modelScale) * zoomProgress)
+        model.scale.setScalar(HERO_CONFIG.modelScale)
         model.position.set(0, 0, 0)
         model.rotation.set(0, HERO_CONFIG.modelRotY, 0)
       }
@@ -376,16 +362,16 @@ export default function HeroCanvas({ scrollProgress, onReady }: HeroCanvasProps)
         screenGlowLight.color.copy(vibrantColor)
         floorGlowLight.color.copy(vibrantColor)
 
-        screenGlowLight.intensity = (11 + (1 - zoomProgress) * 5.5) * flicker
+        screenGlowLight.intensity = envAlpha * 14 * flicker
         floorGlowLight.position.copy(screenWorldPosition).add(new Vector3(0.18, -1.28, 0.92))
-        floorGlowLight.intensity = (5.6 + (1 - zoomProgress) * 2.2) * (0.82 + flicker * 0.35)
+        floorGlowLight.intensity = envAlpha * 7 * (0.82 + flicker * 0.35)
 
         flickerAnchor.copy(screenWorldPosition).addScaledVector(screenWorldNormal, 0.28)
 
         if (floorGlowMesh) {
           floorGlowMesh.position.set(flickerAnchor.x + 0.1, screenWorldPosition.y - 1.26, flickerAnchor.z + 0.72)
           floorGlowMesh.scale.set(0.92 + flicker * 0.12, 0.58 + flicker * 0.08, 1)
-          floorGlowMaterial.opacity = 0.04 + flicker * 0.065
+          floorGlowMaterial.opacity = envAlpha * (0.04 + flicker * 0.065)
           floorGlowMaterial.color.copy(vibrantColor)
         }
 
@@ -393,7 +379,7 @@ export default function HeroCanvas({ scrollProgress, onReady }: HeroCanvasProps)
           screenAuraMesh.position.copy(flickerAnchor).add(new Vector3(0.02, 0.04, 0.16))
           screenAuraMesh.quaternion.copy(screenWorldQuaternion)
           screenAuraMesh.scale.set(0.98 + flicker * 0.06, 0.9 + flicker * 0.05, 1)
-          screenAuraMaterial.opacity = 0.045 + flicker * 0.045
+          screenAuraMaterial.opacity = envAlpha * (0.045 + flicker * 0.045)
           screenAuraMaterial.color.copy(vibrantColor)
         }
 
@@ -404,25 +390,24 @@ export default function HeroCanvas({ scrollProgress, onReady }: HeroCanvasProps)
             HERO_CONFIG.stageZ - 4.7,
           )
           backdropMesh.scale.set(1.12 + pulseA * 0.02, 1.08 + pulseB * 0.016, 1)
-          backdropMaterial.opacity = 0.035 + flicker * 0.02
+          backdropMaterial.opacity = envAlpha * (0.035 + flicker * 0.02)
           backdropMaterial.color.copy(vibrantColor)
         }
 
         if (contactShadowMesh) {
           contactShadowMesh.position.set(flickerAnchor.x - 0.02, screenWorldPosition.y - 1.245, flickerAnchor.z + 0.76)
           contactShadowMesh.scale.set(0.98, 0.7, 1)
-          contactShadowMaterial.opacity = 0.36 - flicker * 0.07
+          contactShadowMaterial.opacity = envAlpha * (0.36 - flicker * 0.07)
         }
 
         if (consoleShadowMesh) {
           consoleShadowMesh.position.set(flickerAnchor.x + 1.58, screenWorldPosition.y - 1.245, flickerAnchor.z + 0.88)
           consoleShadowMesh.scale.set(1.04, 0.78, 1)
-          consoleShadowMaterial.opacity = 0.28 - flicker * 0.04
+          consoleShadowMaterial.opacity = envAlpha * (0.28 - flicker * 0.04)
         }
 
-        zoomCameraPosition.copy(screenWorldPosition).addScaledVector(screenWorldNormal, HERO_CONFIG.screenZoomDistance)
-        cameraPosition.copy(startCameraPosition).lerp(zoomCameraPosition, zoomProgress)
-        lookAtTarget.copy(startLookAt).lerp(screenWorldPosition, zoomProgress)
+        cameraPosition.copy(startCameraPosition)
+        lookAtTarget.copy(startLookAt)
       } else {
         screenGlowLight.intensity = 0
         floorGlowLight.intensity = 0
@@ -437,7 +422,7 @@ export default function HeroCanvas({ scrollProgress, onReady }: HeroCanvasProps)
       }
 
       camera.position.copy(cameraPosition)
-      camera.fov = HERO_CONFIG.cameraFov + (HERO_CONFIG.cameraZoomFov - HERO_CONFIG.cameraFov) * progress
+      camera.fov = HERO_CONFIG.cameraFov
       camera.updateProjectionMatrix()
       camera.lookAt(lookAtTarget)
     }
@@ -451,9 +436,17 @@ export default function HeroCanvas({ scrollProgress, onReady }: HeroCanvasProps)
       renderer.render(scene, camera)
     }
 
+    const onMouseMove = (e: MouseEvent) => {
+      mouseTargetRef.current = {
+        x: (e.clientX / window.innerWidth) * 2 - 1,
+        y: -((e.clientY / window.innerHeight) * 2 - 1),
+      }
+    }
+
     resize()
     applyConfig()
     window.addEventListener('resize', resize)
+    window.addEventListener('mousemove', onMouseMove, { passive: true })
 
     getCachedHeroModel()
       .then((cachedScene) => {
@@ -473,7 +466,7 @@ export default function HeroCanvas({ scrollProgress, onReady }: HeroCanvasProps)
 
         const tvNode = model.getObjectByName('glass_and_fence_25') as Mesh
         if (tvNode) {
-          const screenMat = new MeshStandardMaterial({
+          screenMat = new MeshStandardMaterial({
             map: videoTexture,
             emissive: new Color(0xffffff),
             emissiveMap: videoTexture,
@@ -530,9 +523,15 @@ export default function HeroCanvas({ scrollProgress, onReady }: HeroCanvasProps)
 
       applyConfig()
 
+      // Smooth mouse towards target
+      mouseSmoothedRef.current.x += (mouseTargetRef.current.x - mouseSmoothedRef.current.x) * 0.06
+      mouseSmoothedRef.current.y += (mouseTargetRef.current.y - mouseSmoothedRef.current.y) * 0.06
+
       if (model) {
-        model.rotation.x = Math.sin(elapsed * 0.4) * 0.006
-        model.rotation.y = HERO_CONFIG.modelRotY + Math.sin(elapsed * 0.18) * 0.02
+        const mx = mouseSmoothedRef.current.x
+        const my = mouseSmoothedRef.current.y
+        model.rotation.x = Math.sin(elapsed * 0.4) * 0.006 - my * 0.08
+        model.rotation.y = HERO_CONFIG.modelRotY + Math.sin(elapsed * 0.18) * 0.02 + mx * 0.14
         model.rotation.z = Math.cos(elapsed * 0.28) * 0.005
       }
 
@@ -580,6 +579,7 @@ export default function HeroCanvas({ scrollProgress, onReady }: HeroCanvasProps)
       observer.disconnect()
       stopAnimation()
       window.removeEventListener('resize', resize)
+      window.removeEventListener('mousemove', onMouseMove)
       overlayVideo.pause()
       falloffTexture.dispose()
       crtOverlayTexture.dispose()

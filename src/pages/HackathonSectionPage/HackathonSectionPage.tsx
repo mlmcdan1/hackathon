@@ -10,6 +10,7 @@ export default function HackathonSectionPage() {
   const [showAuthModal, setShowAuthModal] = useState(false)
   const [userEmail, setUserEmail] = useState<string | null>(null)
   const [userName, setUserName] = useState<string | null>(null)
+  const [isAdmin, setIsAdmin] = useState(false)
   const [isExiting, setIsExiting] = useState(false)
 
   const handleNavigateHome = () => {
@@ -18,17 +19,26 @@ export default function HackathonSectionPage() {
     setTimeout(() => navigate('/'), 300)
   }
 
+  async function resolveAdmin(session: import('@supabase/supabase-js').Session | null) {
+    if (!session || !supabase) { setIsAdmin(false); return }
+    if (session.user.email === import.meta.env.VITE_ADMIN_EMAIL) { setIsAdmin(true); return }
+    const { data } = await supabase.from('admins').select('id').eq('user_id', session.user.id).maybeSingle()
+    setIsAdmin(!!data)
+  }
+
   useEffect(() => {
     if (!supabase || !isSupabaseConfigured) return
 
     supabase.auth.getSession().then(({ data }) => {
       setUserEmail(data.session?.user.email ?? null)
       setUserName(data.session?.user.user_metadata?.first_name ?? null)
+      resolveAdmin(data.session ?? null)
     })
 
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
       setUserEmail(session?.user.email ?? null)
       setUserName(session?.user.user_metadata?.first_name ?? null)
+      resolveAdmin(session ?? null)
     })
 
     return () => listener.subscription.unsubscribe()
@@ -62,6 +72,7 @@ export default function HackathonSectionPage() {
         <HackathonSection
           userEmail={userEmail}
           userName={userName}
+          isAdmin={isAdmin}
           onSignIn={() => setShowAuthModal(true)}
           onSignOut={() => void supabase?.auth.signOut()}
           onNavigateHome={handleNavigateHome}

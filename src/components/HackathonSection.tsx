@@ -1,88 +1,71 @@
-import { CalendarDays, FlaskConical, Gamepad2, MapPin, Rocket, Shield, Zap } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { MapPin, Trophy, Users, X } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
+import placeholderImage from '../assets/placeholderImage.png'
+import {
+  computeStatus,
+  displayDay,
+  displayMonth,
+  displaySpots,
+  displayYear,
+  fetchPublicEvents,
+  publicStatusLabel,
+  type EventRecord,
+} from '../lib/eventUtils'
 import HackathonNavbar from './navigation/HackathonNavbar'
 import './HackathonSection.css'
 
-const events = [
-  {
-    tag: 'Hackathon',
-    day: '04',
-    month: 'MAR 2026',
-    title: 'PixelHack 2026',
-    location: 'Online',
-    color: 'red',
-    icon: Gamepad2,
-  },
-  {
-    tag: 'Workshop',
-    day: '12',
-    month: 'MAR 2026',
-    title: 'Midnight Build Jam',
-    location: 'Online',
-    color: 'yellow',
-    icon: Zap,
-  },
-  {
-    tag: 'Hackathon',
-    day: '02',
-    month: 'APR 2026',
-    title: 'Founders x Hackers',
-    location: 'Austin, TX',
-    color: 'teal',
-    icon: Rocket,
-  },
-  {
-    tag: 'Summit',
-    day: '18',
-    month: 'APR 2026',
-    title: 'Augusta Dev Summit',
-    location: 'Online',
-    color: 'purple',
-    icon: Shield,
-  },
-  {
-    tag: 'Sprint',
-    day: '09',
-    month: 'MAY 2026',
-    title: 'Spring Build Weekend',
-    location: 'Augusta, GA',
-    color: 'orange',
-    icon: FlaskConical,
-  },
-  {
-    tag: 'Hackathon',
-    day: '20',
-    month: 'JUN 2026',
-    title: 'Summer Code Jam',
-    location: 'Online',
-    color: 'green',
-    icon: CalendarDays,
-  },
-]
+type Format    = 'All' | 'Online' | 'In-Person'
+type StatusFilter = 'All' | 'Open Reg' | 'Upcoming' | 'Active Now'
+type EventType = 'All' | 'Hackathon' | 'Workshop' | 'Summit' | 'Sprint'
 
-function XboxAButton() {
-  return (
-    <span className="btn-xbox-a" aria-hidden="true">A</span>
-  )
-}
-
+const FORMAT_OPTS: Format[]         = ['All', 'Online', 'In-Person']
+const STATUS_OPTS: StatusFilter[]   = ['All', 'Open Reg', 'Active Now', 'Upcoming']
+const TYPE_OPTS: EventType[]        = ['All', 'Hackathon', 'Workshop', 'Summit', 'Sprint']
 
 interface Props {
   userEmail: string | null
   userName?: string | null
+  isAdmin?: boolean
   onSignIn: () => void
   onSignOut: () => void
   onNavigateHome: () => void
 }
 
-export default function HackathonSection({ userEmail, userName, onSignIn, onSignOut, onNavigateHome }: Props) {
-  const [scrolled, setScrolled] = useState(false)
+export default function HackathonSection({ userEmail, userName, isAdmin = false, onSignIn, onSignOut, onNavigateHome }: Props) {
+  const [scrolled, setScrolled]   = useState(false)
+  const [format, setFormat]       = useState<Format>('All')
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('All')
+  const [eventType, setEventType] = useState<EventType>('All')
+  const [events, setEvents]       = useState<EventRecord[]>([])
+  const [eventsLoading, setEventsLoading] = useState(true)
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40)
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
+
+  useEffect(() => {
+    fetchPublicEvents().then((data) => { setEvents(data); setEventsLoading(false) })
+  }, [])
+
+  const filtered = useMemo(() => events.filter((e) => {
+    const status = computeStatus(e)
+    const label  = publicStatusLabel(status)
+    const loc    = e.format === 'virtual' ? 'Online' : 'In-Person'
+    if (format !== 'All' && loc !== format) return false
+    if (statusFilter !== 'All' && label !== statusFilter) return false
+    if (eventType !== 'All' && e.tag !== eventType) return false
+    return true
+  }), [events, format, statusFilter, eventType])
+
+  const isFiltered = format !== 'All' || statusFilter !== 'All' || eventType !== 'All'
+
+  function clearFilters() {
+    setFormat('All')
+    setStatusFilter('All')
+    setEventType('All')
+  }
 
   return (
     <div className="hs-page">
@@ -94,32 +77,42 @@ export default function HackathonSection({ userEmail, userName, onSignIn, onSign
         onNavigate={(i) => { if (i === 0) onNavigateHome() }}
         userEmail={userEmail}
         userName={userName}
+        isAdmin={isAdmin}
         onSignIn={onSignIn}
         onSignOut={onSignOut}
       />
 
+      {/* Hero */}
       <header className="hs-hero">
         <p className="hs-hero__eyebrow">Augusta Dev — 2026 Season</p>
-        <img
-          src="/SelectAHackathon.png"
-          alt="Select a Hackathon"
-          className="hs-hero__title-img"
-        />
-        <p className="hs-hero__sub">
-          Pick your event, assemble your team, and ship something legendary.
-        </p>
+        <img src="/SelectAHackathon.png" alt="Select a Hackathon" className="hs-hero__title-img" />
+        <p className="hs-hero__sub">Pick your event, assemble your team, and ship something legendary.</p>
       </header>
 
-
+      {/* Body */}
       <div className="hs-body">
 
-        {/* ── Filters sidebar ── */}
+        {/* Filters sidebar */}
         <aside className="hs-filters">
+          <div className="hs-filters__header">
+            <p className="hs-filters__heading">Filters</p>
+            {isFiltered && (
+              <button type="button" className="hs-filters__clear" onClick={clearFilters}>
+                <X size={12} /> Clear
+              </button>
+            )}
+          </div>
+
           <div className="hs-filter-group">
             <p className="hs-filter-group__label">Format</p>
-            {['All', 'Online', 'In-Person'].map((opt, i) => (
+            {FORMAT_OPTS.map((opt) => (
               <label key={opt} className="hs-filter-radio">
-                <input type="radio" name="format" defaultChecked={i === 0} />
+                <input
+                  type="radio"
+                  name="format"
+                  checked={format === opt}
+                  onChange={() => setFormat(opt)}
+                />
                 <span>{opt}</span>
               </label>
             ))}
@@ -127,9 +120,14 @@ export default function HackathonSection({ userEmail, userName, onSignIn, onSign
 
           <div className="hs-filter-group">
             <p className="hs-filter-group__label">Status</p>
-            {['All', 'Upcoming', 'Open Reg'].map((opt, i) => (
+            {STATUS_OPTS.map((opt) => (
               <label key={opt} className="hs-filter-radio">
-                <input type="radio" name="status" defaultChecked={i === 0} />
+                <input
+                  type="radio"
+                  name="status"
+                  checked={statusFilter === opt}
+                  onChange={() => setStatusFilter(opt)}
+                />
                 <span>{opt}</span>
               </label>
             ))}
@@ -137,69 +135,90 @@ export default function HackathonSection({ userEmail, userName, onSignIn, onSign
 
           <div className="hs-filter-group">
             <p className="hs-filter-group__label">Type</p>
-            {['All', 'Hackathon', 'Workshop', 'Summit', 'Sprint'].map((opt, i) => (
+            {TYPE_OPTS.map((opt) => (
               <label key={opt} className="hs-filter-radio">
-                <input type="radio" name="type" defaultChecked={i === 0} />
+                <input
+                  type="radio"
+                  name="type"
+                  checked={eventType === opt}
+                  onChange={() => setEventType(opt)}
+                />
                 <span>{opt}</span>
               </label>
             ))}
           </div>
         </aside>
 
+        {/* Event list */}
         <main className="hs-stack">
-        {events.map((event) => {
-          const Icon = event.icon
-          return (
-            <article key={event.title} className={`hs-char-card hs-char-card--${event.color}`}>
+          <p className="hs-stack__count">
+            {eventsLoading
+              ? 'Loading events…'
+              : `${filtered.length} of ${events.length} events${isFiltered ? ' — filtered' : ''}`
+            }
+          </p>
 
-              {/* Left color bar */}
-              <div className="hs-char-card__accent" />
+          {!eventsLoading && filtered.length === 0 && (
+            <div className="hs-empty">
+              <p className="hs-empty__text">{events.length === 0 ? 'No events found.' : 'No events match your filters.'}</p>
+              {isFiltered && <button type="button" className="hs-empty__reset" onClick={clearFilters}>Clear filters</button>}
+            </div>
+          )}
 
-              {/* Portrait circle */}
-              <div className="hs-char-card__portrait">
-                <div className="hs-char-card__portrait-ring">
-                  <Icon size={58} className="hs-char-card__portrait-icon" strokeWidth={1.5} />
+          {filtered.map((event) => {
+            const status      = computeStatus(event)
+            const statusLabel = publicStatusLabel(status)
+            const loc         = event.format === 'virtual' ? 'Online' : event.location
+            const isOpen      = status === 'open-reg' || status === 'active'
+            return (
+              <article key={event.id} className={`hs-card hs-card--${event.color}`}>
+                <div className="hs-card__bar" />
+
+                <div className="hs-card__thumb">
+                  <img src={event.image ?? placeholderImage} alt={event.title} className="hs-card__thumb-img" />
                 </div>
-              </div>
 
-              {/* Body */}
-              <div className="hs-char-card__body">
-                <div className="hs-char-card__info">
-                  <p className="hs-char-card__tag">{event.tag}</p>
-                  <h2 className="hs-char-card__title">{event.title}</h2>
-                  <div className="hs-char-card__meta">
-                    <span><MapPin size={10} />{event.location}</span>
+                <div className="hs-card__info">
+                  <div className="hs-card__tags">
+                    <span className="hs-card__tag">{event.tag}</span>
+                    <span className={`hs-card__status hs-card__status--${isOpen ? 'open' : status}`}>
+                      {statusLabel}
+                    </span>
+                  </div>
+                  <h2 className="hs-card__title">{event.title}</h2>
+                  <p className="hs-card__desc">{event.description}</p>
+                  <div className="hs-card__meta">
+                    <span className="hs-card__meta-item"><MapPin size={11} /> {loc}</span>
+                    <span className="hs-card__meta-item"><Users size={11} /> {displaySpots(event)}</span>
+                    <span className="hs-card__meta-item"><Trophy size={11} /> {event.prizePool}</span>
                   </div>
                 </div>
 
-                {/* Date box */}
-                <div className="hs-char-card__datebox">
-                  <span className="hs-char-card__day">{event.day}</span>
-                  <span className="hs-char-card__month">{event.month}</span>
+                <div className="hs-card__date">
+                  <span className="hs-card__day">{displayDay(event)}</span>
+                  <span className="hs-card__month">{displayMonth(event)}</span>
+                  <span className="hs-card__year">{displayYear(event)}</span>
                 </div>
 
-                {/* CTA */}
                 <button
                   type="button"
-                  className="hs-char-card__cta"
-                  onClick={onSignIn}
+                  className={`hs-card__cta${!isOpen ? ' hs-card__cta--disabled' : ''}`}
+                  onClick={isOpen ? onSignIn : undefined}
+                  disabled={!isOpen}
                   aria-label={`Register for ${event.title}`}
                 >
-                  <XboxAButton />
-                  Register
+                  {isOpen ? 'Register' : statusLabel}
                 </button>
-              </div>
-
-            </article>
-          )
-        })}
+              </article>
+            )
+          })}
         </main>
 
       </div>
 
       <footer className="hs-footer">
         <span className="hs-footer__text">Think. Create. Innovate.</span>
-<span className="hs-footer__brand">Augusta Dev © 2026</span>
+        <span className="hs-footer__brand">Augusta Dev © 2026</span>
       </footer>
 
     </div>

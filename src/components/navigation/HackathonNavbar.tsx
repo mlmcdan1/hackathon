@@ -12,6 +12,7 @@ interface HackathonNavbarProps {
   onNavigate: (sectionIndex: number) => void
   userEmail: string | null
   userName?: string | null
+  isAdmin?: boolean
   onSignIn: () => void
   onSignOut: () => void
 }
@@ -37,6 +38,7 @@ export default function HackathonNavbar({
   onNavigate,
   userEmail,
   userName,
+  isAdmin = false,
   onSignIn,
   onSignOut,
 }: HackathonNavbarProps) {
@@ -87,9 +89,9 @@ export default function HackathonNavbar({
             Hackathons
           </button>
         )}
-        <button type="button" className="hackathon-nav__link" onClick={() => onNavigate(0)}>
+        <Link to="/about" className="hackathon-nav__link">
           About Us
-        </button>
+        </Link>
       </nav>
 
       <div className="hackathon-nav__actions">
@@ -114,6 +116,15 @@ export default function HackathonNavbar({
                 >
                   Profile
                 </Link>
+                {isAdmin && (
+                  <Link
+                    className="hackathon-nav__menu-item hackathon-nav__menu-item--admin"
+                    to="/admin"
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    Admin Portal
+                  </Link>
+                )}
                 <div className="hackathon-nav__menu-divider" />
                 <button
                   type="button"

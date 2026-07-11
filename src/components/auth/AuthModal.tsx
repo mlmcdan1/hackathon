@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { isSupabaseConfigured, supabase } from '../../lib/supabase'
 import './AuthModal.css'
 
@@ -6,9 +7,10 @@ interface AuthModalProps {
   onClose: () => void
 }
 
-type Mode = 'signin' | 'register'
+type Mode = 'signin' | 'register' | 'forgot'
 
 export default function AuthModal({ onClose }: AuthModalProps) {
+  const navigate = useNavigate()
   const [mode, setMode] = useState<Mode>('signin')
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
@@ -19,7 +21,10 @@ export default function AuthModal({ onClose }: AuthModalProps) {
   const [info, setInfo] = useState('')
   const [loading, setLoading] = useState(false)
 
-  const title = mode === 'signin' ? 'Sign in to Augusta Dev' : 'Register on our platform'
+  const title =
+    mode === 'signin' ? 'Sign in to Augusta Dev'
+    : mode === 'register' ? 'Register on our platform'
+    : 'Reset your password'
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -44,17 +49,23 @@ export default function AuthModal({ onClose }: AuthModalProps) {
     setLoading(true)
 
     if (mode === 'signin') {
-      const { error: err } = await supabase.auth.signInWithPassword({ email, password })
+      const { data, error: err } = await supabase.auth.signInWithPassword({ email, password })
       if (err) {
         setError(err.message)
       } else {
         onClose()
+        if (data.session?.user?.app_metadata?.role === 'admin') {
+          navigate('/admin')
+        }
       }
-    } else {
+    } else if (mode === 'register') {
       const { data, error: err } = await supabase.auth.signUp({
         email,
         password,
-        options: { data: { first_name: firstName.trim(), last_name: lastName.trim() } },
+        options: {
+          data: { first_name: firstName.trim(), last_name: lastName.trim() },
+          emailRedirectTo: `${window.location.origin}/`,
+        },
       })
       if (err) {
         setError(err.message)
@@ -62,6 +73,15 @@ export default function AuthModal({ onClose }: AuthModalProps) {
         onClose()
       } else {
         setInfo('Check your email to confirm your account.')
+      }
+    } else {
+      const { error: err } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      })
+      if (err) {
+        setError(err.message)
+      } else {
+        setInfo('Password reset link sent — check your email.')
       }
     }
 
@@ -85,105 +105,139 @@ export default function AuthModal({ onClose }: AuthModalProps) {
         </div>
 
         <form className="auth-body" onSubmit={handleSubmit}>
-          {mode === 'register' && (
-            <div className="auth-field-row">
+          {mode === 'forgot' ? (
+            <>
+              <p className="auth-forgot-desc">Enter your email and we'll send you a reset link.</p>
               <div className="auth-field">
-                <label htmlFor="auth-firstname">First name</label>
+                <label htmlFor="auth-email-forgot">Email</label>
                 <input
-                  id="auth-firstname"
-                  type="text"
-                  placeholder="First name"
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
+                  id="auth-email-forgot"
+                  type="email"
+                  placeholder="Your email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   required
-                  autoComplete="given-name"
+                  autoComplete="email"
                   disabled={loading}
                 />
               </div>
+            </>
+          ) : (
+            <>
+              {mode === 'register' && (
+                <div className="auth-field-row">
+                  <div className="auth-field">
+                    <label htmlFor="auth-firstname">First name</label>
+                    <input
+                      id="auth-firstname"
+                      type="text"
+                      placeholder="First name"
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                      required
+                      autoComplete="given-name"
+                      disabled={loading}
+                    />
+                  </div>
+                  <div className="auth-field">
+                    <label htmlFor="auth-lastname">Last name</label>
+                    <input
+                      id="auth-lastname"
+                      type="text"
+                      placeholder="Last name"
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                      required
+                      autoComplete="family-name"
+                      disabled={loading}
+                    />
+                  </div>
+                </div>
+              )}
+
               <div className="auth-field">
-                <label htmlFor="auth-lastname">Last name</label>
+                <label htmlFor="auth-email">Email</label>
                 <input
-                  id="auth-lastname"
-                  type="text"
-                  placeholder="Last name"
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
+                  id="auth-email"
+                  type="email"
+                  placeholder="Your email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   required
-                  autoComplete="family-name"
+                  autoComplete="email"
                   disabled={loading}
                 />
               </div>
-            </div>
-          )}
 
-          <div className="auth-field">
-            <label htmlFor="auth-email">Email</label>
-            <input
-              id="auth-email"
-              type="email"
-              placeholder="Your email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              autoComplete="email"
-              disabled={loading}
-            />
-          </div>
+              <div className="auth-field">
+                <div className="auth-field__label-row">
+                  <label htmlFor="auth-password">Password</label>
+                  {mode === 'signin' && (
+                    <a className="auth-forgot-link" onClick={() => switchMode('forgot')}>Forgot password?</a>
+                  )}
+                </div>
+                <input
+                  id="auth-password"
+                  type="password"
+                  placeholder="Your password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
+                  disabled={loading}
+                />
+              </div>
 
-          <div className="auth-field">
-            <label htmlFor="auth-password">Password</label>
-            <input
-              id="auth-password"
-              type="password"
-              placeholder="Your password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
-              disabled={loading}
-            />
-          </div>
-
-          {mode === 'register' && (
-            <div className="auth-field">
-              <label htmlFor="auth-confirm">Confirm password</label>
-              <input
-                id="auth-confirm"
-                type="password"
-                placeholder="Confirm your password"
-                value={confirm}
-                onChange={(e) => setConfirm(e.target.value)}
-                required
-                autoComplete="new-password"
-                disabled={loading}
-              />
-            </div>
+              {mode === 'register' && (
+                <div className="auth-field">
+                  <label htmlFor="auth-confirm">Confirm password</label>
+                  <input
+                    id="auth-confirm"
+                    type="password"
+                    placeholder="Confirm your password"
+                    value={confirm}
+                    onChange={(e) => setConfirm(e.target.value)}
+                    required
+                    autoComplete="new-password"
+                    disabled={loading}
+                  />
+                </div>
+              )}
+            </>
           )}
 
           {error && <p className="auth-error">{error}</p>}
           {info && <p className="auth-info">{info}</p>}
 
-          <button type="submit" className="auth-submit" disabled={loading}>
-            {loading ? 'Please wait...' : mode === 'signin' ? 'Sign in' : 'Register account'}
-          </button>
+          {!info && (
+            <button type="submit" className="auth-submit" disabled={loading}>
+              {loading
+                ? 'Please wait...'
+                : mode === 'signin' ? 'Sign in'
+                : mode === 'register' ? 'Register account'
+                : 'Send reset link'}
+            </button>
+          )}
 
           {!isSupabaseConfigured && (
             <p className="auth-info">Sign-in is disabled until Supabase environment variables are configured.</p>
           )}
 
-          {!info && (
-            <p className="auth-toggle">
-              {mode === 'signin' ? (
-                <>Don't have an account?{' '}
-                  <a onClick={() => switchMode('register')}>Register here</a>
-                </>
-              ) : (
-                <>Already have an account?{' '}
-                  <a onClick={() => switchMode('signin')}>Sign in here</a>
-                </>
-              )}
-            </p>
-          )}
+          <p className="auth-toggle">
+            {mode === 'forgot' ? (
+              <>Remembered it?{' '}
+                <a onClick={() => switchMode('signin')}>Back to sign in</a>
+              </>
+            ) : mode === 'signin' ? (
+              <>Don't have an account?{' '}
+                <a onClick={() => switchMode('register')}>Register here</a>
+              </>
+            ) : (
+              <>Already have an account?{' '}
+                <a onClick={() => switchMode('signin')}>Sign in here</a>
+              </>
+            )}
+          </p>
         </form>
       </div>
     </div>
