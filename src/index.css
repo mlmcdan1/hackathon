@@ -34,7 +34,7 @@
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  cursor: url('/cursor-pointer.svg') 4 0, pointer;
+  cursor: pointer;
   border-top: 4px solid var(--color-nick-border-dark);
   border-right: 2px solid var(--color-nick-border-dark);
   border-left: 2px solid var(--color-nick-border-dark);

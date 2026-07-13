@@ -1,4 +1,9 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="13" height="21" viewBox="0 0 13 21" shape-rendering="crispEdges">
-  <path d="M0,0 L0,17 L4,13 L6,19 L9,18 L7,12 L12,12 Z" fill="black"/>
-  <path d="M1.5,2.5 L1.5,14 L4,11 L6.5,17 L7.5,16.5 L5.5,10.5 L10,10.5 Z" fill="white"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="36" viewBox="0 0 12 18" shape-rendering="crispEdges">
+  <!-- outer black outline -->
+  <path d="M0,0 L0,14 L4,10 L6,16 L9,15 L7,9 L11,9 Z" fill="#0a0a0f"/>
+  <!-- purple fill -->
+  <path d="M1,2 L1,13 L4,10 L6,15 L8,14 L6,8 L10,8 Z" fill="#7c3aed"/>
+  <!-- light highlight edge -->
+  <rect x="1" y="2" width="1" height="7" fill="#c4b5fd"/>
+  <rect x="2" y="2" width="1" height="1" fill="#c4b5fd"/>
 </svg>

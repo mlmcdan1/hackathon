@@ -220,8 +220,8 @@ function GameboysInScene({
           key={cfg.color}
           ref={refs[i]}
           position={cfg.position}
-          onPointerEnter={(e) => { e.stopPropagation(); onHover(i); gl.domElement.style.cursor = "url('/cursor-pointer.svg') 4 0, pointer" }}
-          onPointerLeave={(e) => { e.stopPropagation(); onHover(null); gl.domElement.style.cursor = "url('/cursor-default.svg') 0 0, default" }}
+          onPointerEnter={(e) => { e.stopPropagation(); onHover(i); gl.domElement.style.cursor = 'pointer' }}
+          onPointerLeave={(e) => { e.stopPropagation(); onHover(null); gl.domElement.style.cursor = 'default' }}
           onClick={(e) => { e.stopPropagation(); onClick(i) }}
         >
           <group rotation={[0, 0, -0.34]} scale={1.9}>

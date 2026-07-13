@@ -44,7 +44,7 @@ export default function AboutPage() {
           activeSection={-1}
           scrolled={scrolled}
           links={[{ label: 'Hackathons', index: 1 }]}
-          onNavigate={(i) => { if (i === 1) navigate('/hackathons') }}
+          onNavigate={(i) => { if (i === 0) navigate('/'); else if (i === 1) navigate('/hackathons') }}
           userEmail={userEmail}
           userName={userName}
           isAdmin={isAdmin}

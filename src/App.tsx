@@ -52,7 +52,7 @@ if (typeof window !== 'undefined') {
   window.history.scrollRestoration = 'manual'
 }
 
-const SOUND_ROUTES = ['/', '/hackathons']
+const SOUND_ROUTES = ['/', '/hackathons', '/about']
 
 function useButtonHoverSound(enabled: boolean) {
   const audioRef = useRef<HTMLAudioElement | null>(null)

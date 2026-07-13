@@ -142,6 +142,7 @@ export default function Homepage() {
   async function resolveAdmin(session: import('@supabase/supabase-js').Session | null) {
     if (!session || !supabase) { setIsAdmin(false); return }
     if (session.user.email === import.meta.env.VITE_ADMIN_EMAIL) { setIsAdmin(true); return }
+    if (session.user.app_metadata?.role === 'admin' || session.user.user_metadata?.role === 'admin') { setIsAdmin(true); return }
     const { data } = await supabase.from('admins').select('id').eq('user_id', session.user.id).maybeSingle()
     setIsAdmin(!!data)
   }
