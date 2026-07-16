@@ -227,9 +227,8 @@ export default function HackathonSection({ userEmail, userName, isAdmin = false,
                 <button
                   type="button"
                   className={`hs-card__cta${!isOpen ? ' hs-card__cta--disabled' : ''}`}
-                  onClick={isOpen ? (e) => { e.stopPropagation(); navigate(`/hackathons/${event.id}`) } : (e) => e.stopPropagation()}
-                  disabled={!isOpen}
-                  aria-label={`Register for ${event.title}`}
+                  onClick={(e) => { e.stopPropagation(); navigate(`/hackathons/${event.id}`) }}
+                  aria-label={`View ${event.title}`}
                 >
                   {isOpen ? 'Register' : statusLabel}
                 </button>
