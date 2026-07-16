@@ -1,5 +1,6 @@
 import { MapPin, Trophy, Users, X } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import placeholderImage from '../assets/placeholderImage.png'
 import {
   computeStatus,
@@ -32,6 +33,7 @@ interface Props {
 }
 
 export default function HackathonSection({ userEmail, userName, isAdmin = false, onSignIn, onSignOut, onNavigateHome }: Props) {
+  const navigate = useNavigate()
   const [scrolled, setScrolled]   = useState(false)
   const [format, setFormat]       = useState<Format>('All')
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('All')
@@ -189,7 +191,11 @@ export default function HackathonSection({ userEmail, userName, isAdmin = false,
             const loc         = event.format === 'virtual' ? 'Online' : event.location
             const isOpen      = status === 'open-reg' || status === 'active'
             return (
-              <article key={event.id} className={`hs-card hs-card--${event.color}`}>
+              <article
+                key={event.id}
+                className={`hs-card hs-card--${event.color}`}
+                onClick={() => navigate(`/hackathons/${event.id}`)}
+              >
                 <div className="hs-card__bar" />
 
                 <div className="hs-card__thumb">
@@ -221,7 +227,7 @@ export default function HackathonSection({ userEmail, userName, isAdmin = false,
                 <button
                   type="button"
                   className={`hs-card__cta${!isOpen ? ' hs-card__cta--disabled' : ''}`}
-                  onClick={isOpen ? onSignIn : undefined}
+                  onClick={isOpen ? (e) => { e.stopPropagation(); navigate(`/hackathons/${event.id}`) } : (e) => e.stopPropagation()}
                   disabled={!isOpen}
                   aria-label={`Register for ${event.title}`}
                 >

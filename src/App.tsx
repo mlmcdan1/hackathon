@@ -11,6 +11,7 @@ const Profile = lazy(() => import('./pages/Profile/Profile'))
 const AdminPage = lazy(() => import('./pages/AdminPage/AdminPage'))
 const AboutPage = lazy(() => import('./pages/AboutPage/AboutPage'))
 const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage/ResetPasswordPage'))
+const HackathonDetailPage = lazy(() => import('./pages/HackathonDetailPage/HackathonDetailPage'))
 
 function ProtectedAdminRoute({ children }: { children: React.ReactNode }) {
   const [session, setSession]   = useState<Session | null | undefined>(undefined)
@@ -52,7 +53,7 @@ if (typeof window !== 'undefined') {
   window.history.scrollRestoration = 'manual'
 }
 
-const SOUND_ROUTES = ['/', '/hackathons', '/about']
+const SOUND_ROUTE_PREFIXES = ['/', '/hackathons', '/about']
 
 function useButtonHoverSound(enabled: boolean) {
   const audioRef = useRef<HTMLAudioElement | null>(null)
@@ -84,13 +85,14 @@ function useButtonHoverSound(enabled: boolean) {
 
 export default function App() {
   const { pathname } = useLocation()
-  useButtonHoverSound(SOUND_ROUTES.includes(pathname))
+  useButtonHoverSound(SOUND_ROUTE_PREFIXES.some((p) => pathname === p || pathname.startsWith(p + '/')))
 
   return (
     <>
     <Routes>
       <Route path="/" element={<HackathonPage />} />
       <Route path="/hackathons" element={<HackathonSectionPage />} />
+      <Route path="/hackathons/:id" element={<Suspense fallback={null}><HackathonDetailPage /></Suspense>} />
       <Route path="/about" element={<Suspense fallback={null}><AboutPage /></Suspense>} />
       <Route path="/reset-password" element={<Suspense fallback={null}><ResetPasswordPage /></Suspense>} />
       <Route path="/profile" element={<Suspense fallback={null}><Profile /></Suspense>} />
