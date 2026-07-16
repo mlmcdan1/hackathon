@@ -15,8 +15,10 @@
   justify-content: space-between;
   padding: 18px 40px;
   background: #f4f5fb;
-  position: relative;
-  z-index: 10;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.06);
 }
 
 .pf-nav__brand {
@@ -44,7 +46,12 @@
 }
 
 .pf-nav__back:hover { color: #111; }
-.pf-nav__signout:hover { color: #e53e3e; }
+
+.pf-nav__signout {
+  color: #e53e3e;
+}
+
+.pf-nav__signout:hover { color: #c53030; }
 
 /* ── Hero banner ────────────────────────────────────────────────── */
 .pf-hero {
