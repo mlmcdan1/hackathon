@@ -104,35 +104,36 @@ export async function fetchPublicEvents(): Promise<EventRecord[]> {
   return _publicEventsCache
 }
 
-export interface ReminderPrefs {
-  remind1Week: boolean
-  remind3Days: boolean
-  remindDayOf: boolean
-}
-
-export async function fetchReminder(eventId: string, userId: string): Promise<ReminderPrefs | null> {
-  if (!supabase) return null
+export async function fetchReminderSubscribed(eventId: string, userId: string): Promise<boolean> {
+  if (!supabase) return false
   const { data } = await supabase
     .from('hackathon_reminders')
-    .select('remind_1_week, remind_3_days, remind_day_of')
+    .select('id')
     .eq('user_id', userId)
     .eq('event_id', eventId)
     .maybeSingle()
-  if (!data) return null
-  return { remind1Week: data.remind_1_week, remind3Days: data.remind_3_days, remindDayOf: data.remind_day_of }
+  return !!data
 }
 
-export async function saveReminder(eventId: string, userId: string, prefs: ReminderPrefs): Promise<boolean> {
+export async function toggleReminder(eventId: string, userId: string, subscribed: boolean): Promise<boolean> {
   if (!supabase) return false
+  if (!subscribed) {
+    const { error } = await supabase
+      .from('hackathon_reminders')
+      .delete()
+      .eq('user_id', userId)
+      .eq('event_id', eventId)
+    return !error
+  }
   const { error } = await supabase
     .from('hackathon_reminders')
     .upsert({
-      user_id:        userId,
-      event_id:       eventId,
-      remind_1_week:  prefs.remind1Week,
-      remind_3_days:  prefs.remind3Days,
-      remind_day_of:  prefs.remindDayOf,
-      updated_at:     new Date().toISOString(),
+      user_id:       userId,
+      event_id:      eventId,
+      remind_1_week: true,
+      remind_3_days: true,
+      remind_day_of: true,
+      updated_at:    new Date().toISOString(),
     }, { onConflict: 'user_id,event_id' })
   return !error
 }

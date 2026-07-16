@@ -1,19 +1,26 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Bell, Calendar, Clock, MapPin, Trophy, Users } from 'lucide-react'
+import { ArrowLeft, Bell, BellOff, Calendar, Clock, MapPin, Trophy, Users } from 'lucide-react'
 import placeholderImage from '../../assets/placeholderImage.png'
 import {
   computeStatus,
   fetchPublicEvents,
-  fetchReminder,
+  fetchReminderSubscribed,
   publicStatusLabel,
-  saveReminder,
+  toggleReminder,
   type EventRecord,
-  type ReminderPrefs,
 } from '../../lib/eventUtils'
+import {
+  fetchRegistration,
+  fetchSubmission,
+  type Registration,
+  type ProjectSubmission,
+} from '../../lib/registrationUtils'
 import { isSupabaseConfigured, supabase } from '../../lib/supabase'
 import HackathonNavbar from '../../components/navigation/HackathonNavbar'
 import AuthModal from '../../components/auth/AuthModal'
+import RegistrationModal from '../../components/registration/RegistrationModal'
+import ProjectSubmissionModal from '../../components/registration/ProjectSubmissionModal'
 import './HackathonDetailPage.css'
 
 // ── Color maps (match HackathonSection) ───────────────────────────
@@ -36,12 +43,6 @@ const COLOR_RGB: Record<string, string> = {
   green:  '74, 222, 128',
 }
 
-const REMINDER_OPTIONS: Array<{ key: keyof ReminderPrefs; label: string; desc: string }> = [
-  { key: 'remind1Week', label: '1 week before', desc: '7 days out' },
-  { key: 'remind3Days', label: '3 days before', desc: '72 hours out' },
-  { key: 'remindDayOf', label: 'Day of event',  desc: 'Morning of the event' },
-]
-
 // ── Utilities ─────────────────────────────────────────────────────
 
 function parseEventDateTime(dateStr: string, timeStr: string): Date {
@@ -63,7 +64,7 @@ function getRemaining(target: Date) {
 
 // ── Sub-components ────────────────────────────────────────────────
 
-function CountdownDisplay({ target, colorHex }: { target: Date; colorHex: string }) {
+function CountdownDisplay({ target, colorHex, colorRgb }: { target: Date; colorHex: string; colorRgb: string }) {
   const [rem, setRem] = useState(() => getRemaining(target))
 
   useEffect(() => {
@@ -74,6 +75,7 @@ function CountdownDisplay({ target, colorHex }: { target: Date; colorHex: string
 
   if (rem.done) return <p className="hdp-countdown__done">Happening now!</p>
 
+  const style = { '--hdp-color': colorHex, '--hdp-rgb': colorRgb } as React.CSSProperties
   return (
     <div className="hdp-countdown">
       {[
@@ -82,7 +84,7 @@ function CountdownDisplay({ target, colorHex }: { target: Date; colorHex: string
         { val: rem.minutes, unit: 'Min'  },
         { val: rem.seconds, unit: 'Sec'  },
       ].map(({ val, unit }) => (
-        <div key={unit} className="hdp-countdown__block" style={{ '--hdp-color': colorHex } as React.CSSProperties}>
+        <div key={unit} className="hdp-countdown__block" style={style}>
           <span className="hdp-countdown__num">{String(val).padStart(2, '0')}</span>
           <span className="hdp-countdown__unit">{unit}</span>
         </div>
@@ -114,30 +116,38 @@ function DetailSkeleton() {
 // ── Main page ─────────────────────────────────────────────────────
 
 export default function HackathonDetailPage() {
-  const { id }    = useParams<{ id: string }>()
-  const navigate  = useNavigate()
+  const { id }   = useParams<{ id: string }>()
+  const navigate = useNavigate()
 
-  const [event, setEvent]                   = useState<EventRecord | null>(null)
-  const [loading, setLoading]               = useState(true)
-  const [notFound, setNotFound]             = useState(false)
-  const [scrolled, setScrolled]             = useState(false)
-  const [showAuthModal, setShowAuthModal]   = useState(false)
-  const [userEmail, setUserEmail]           = useState<string | null>(null)
-  const [userName, setUserName]             = useState<string | null>(null)
-  const [userId, setUserId]                 = useState<string | null>(null)
-  const [isAdmin, setIsAdmin]               = useState(false)
-  const [reminders, setReminders]           = useState<ReminderPrefs>({ remind1Week: false, remind3Days: false, remindDayOf: true })
-  const [reminderLoaded, setReminderLoaded] = useState(false)
-  const [reminderSaving, setReminderSaving] = useState(false)
-  const [registered, setRegistered]         = useState(false)
+  const [event,    setEvent]    = useState<EventRecord | null>(null)
+  const [loading,  setLoading]  = useState(true)
+  const [notFound, setNotFound] = useState(false)
+  const [scrolled, setScrolled] = useState(false)
 
+  const [showAuthModal,         setShowAuthModal]         = useState(false)
+  const [showRegModal,          setShowRegModal]          = useState(false)
+  const [showSubModal,          setShowSubModal]          = useState(false)
+
+  const [userEmail, setUserEmail] = useState<string | null>(null)
+  const [userName,  setUserName]  = useState<string | null>(null)
+  const [userId,    setUserId]    = useState<string | null>(null)
+  const [isAdmin,   setIsAdmin]   = useState(false)
+
+  const [registration,  setRegistration]  = useState<Registration | null>(null)
+  const [submission,    setSubmission]    = useState<ProjectSubmission | null>(null)
+  const [regLoading,    setRegLoading]    = useState(true)
+
+  const [reminded,      setReminded]      = useState(false)
+  const [reminderLoading, setReminderLoading] = useState(false)
+
+  // Scroll listener
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40)
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
-  // Load event from cache (instant if coming from list page)
+  // Load event (instant from cache if coming from list page)
   useEffect(() => {
     fetchPublicEvents().then((events) => {
       const found = events.find((e) => e.id === id)
@@ -164,37 +174,29 @@ export default function HackathonDetailPage() {
     return () => listener.subscription.unsubscribe()
   }, [])
 
-  // Load reminders
+  // Load registration, submission, and reminder state when userId is known
   useEffect(() => {
-    if (!userId || !id) { setReminderLoaded(true); return }
-    fetchReminder(id, userId).then((prefs) => {
-      if (prefs) setReminders(prefs)
-      setReminderLoaded(true)
+    if (!userId || !id) { setRegLoading(false); return }
+    setRegLoading(true)
+    Promise.all([
+      fetchRegistration(id, userId),
+      fetchSubmission(id, userId),
+      fetchReminderSubscribed(id, userId),
+    ]).then(([reg, sub, rem]) => {
+      setRegistration(reg)
+      setSubmission(sub)
+      setReminded(rem)
+      setRegLoading(false)
     })
   }, [userId, id])
 
-  // Load registration state from localStorage
-  useEffect(() => {
-    if (id) setRegistered(localStorage.getItem(`registered-${id}`) === '1')
-  }, [id])
-
-  const handleReminderToggle = async (key: keyof ReminderPrefs) => {
+  const handleReminderToggle = async () => {
     if (!userId || !id) { setShowAuthModal(true); return }
-    const next = { ...reminders, [key]: !reminders[key] }
-    setReminders(next)
-    setReminderSaving(true)
-    await saveReminder(id, userId, next)
-    setReminderSaving(false)
-  }
-
-  const handleRegister = () => {
-    if (!userEmail) { setShowAuthModal(true); return }
-    const next = !registered
-    setRegistered(next)
-    if (id) {
-      if (next) localStorage.setItem(`registered-${id}`, '1')
-      else      localStorage.removeItem(`registered-${id}`)
-    }
+    const next = !reminded
+    setReminded(next)
+    setReminderLoading(true)
+    await toggleReminder(id, userId, next)
+    setReminderLoading(false)
   }
 
   if (loading) return <DetailSkeleton />
@@ -210,7 +212,9 @@ export default function HackathonDetailPage() {
 
   const status      = computeStatus(event)
   const statusLabel = publicStatusLabel(status)
-  const isOpen      = status === 'open-reg' || status === 'active'
+  const isOpen      = status === 'open-reg'
+  const isActive    = status === 'active'
+  const isCompleted = status === 'completed'
   const colorHex    = COLOR_HEX[event.color] ?? '#c084fc'
   const colorRgb    = COLOR_RGB[event.color] ?? '192, 132, 252'
 
@@ -223,21 +227,23 @@ export default function HackathonDetailPage() {
 
   let countdownTarget: Date | null = null
   let countdownLabel               = ''
-  if (status === 'open-reg') {
+  if (isOpen) {
     countdownTarget = startDt
     countdownLabel  = 'Event Starts In'
   } else if (status === 'upcoming') {
     countdownTarget = startDt
     countdownLabel  = 'Coming Up In'
-  } else if (status === 'active') {
+  } else if (isActive) {
     countdownTarget = endDt
     countdownLabel  = 'Event Ends In'
   }
 
-  const pageStyle = {
-    '--hdp-color': colorHex,
-    '--hdp-rgb':   colorRgb,
-  } as React.CSSProperties
+  const pageStyle = { '--hdp-color': colorHex, '--hdp-rgb': colorRgb } as React.CSSProperties
+
+  // ── CTA logic ─────────────────────────────────────────────────────
+  // What to show in the sidebar CTA depends on auth + registration + event phase
+
+  const canSubmitProject = (isActive || isCompleted) && !!registration
 
   return (
     <>
@@ -271,7 +277,7 @@ export default function HackathonDetailPage() {
               <ArrowLeft size={14} />
               Back to Hackathons
             </button>
-            <span className={`hdp-status hdp-status--${isOpen ? 'open' : status}`}>
+            <span className={`hdp-status hdp-status--${isOpen || isActive ? 'open' : status}`}>
               {statusLabel}
             </span>
           </div>
@@ -319,11 +325,11 @@ export default function HackathonDetailPage() {
             {countdownTarget && (
               <div className="hdp-card">
                 <span className="hdp-card__label">{countdownLabel}</span>
-                <CountdownDisplay target={countdownTarget} colorHex={colorHex} />
+                <CountdownDisplay target={countdownTarget} colorHex={colorHex} colorRgb={colorRgb} />
               </div>
             )}
 
-            {/* Event info */}
+            {/* Event details */}
             <div className="hdp-card">
               <span className="hdp-card__label">Event Details</span>
               <ul className="hdp-info">
@@ -388,58 +394,115 @@ export default function HackathonDetailPage() {
               </ul>
             </div>
 
-            {/* Register */}
+            {/* ── CTA card ── */}
             <div className="hdp-card hdp-card--cta">
-              {isOpen ? (
+              {regLoading ? (
+                <div className="hdp-skel" style={{ height: 44, borderRadius: 10 }} />
+              ) : !userEmail ? (
+                /* Not logged in */
+                <>
+                  <button
+                    type="button"
+                    className="hdp-register"
+                    onClick={() => setShowAuthModal(true)}
+                  >
+                    Sign In to Register
+                  </button>
+                  <p className="hdp-cta-hint">
+                    Create a free account to register and track this event.
+                  </p>
+                </>
+              ) : !registration && !isOpen && !isActive ? (
+                /* Logged in, registration not open */
+                <button type="button" className="hdp-register hdp-register--disabled" disabled>
+                  {isCompleted ? 'Event Ended' : 'Registration Not Open Yet'}
+                </button>
+              ) : !registration && (isOpen || isActive) ? (
+                /* Logged in, can register */
                 <button
                   type="button"
-                  className={`hdp-register${registered ? ' hdp-register--in' : ''}`}
-                  onClick={handleRegister}
+                  className="hdp-register"
+                  onClick={() => setShowRegModal(true)}
                 >
-                  {registered ? "✓ You're Registered!" : 'Register Now'}
+                  Register Now
                 </button>
-              ) : (
-                <button type="button" className="hdp-register hdp-register--disabled" disabled>
-                  {statusLabel}
-                </button>
-              )}
-              {!userEmail && isOpen && (
-                <p className="hdp-cta-hint">
-                  <button type="button" className="hdp-cta-hint__link" onClick={() => setShowAuthModal(true)}>
-                    Sign in
-                  </button>{' '}to save your spot &amp; get reminders.
-                </p>
-              )}
+              ) : registration && !canSubmitProject ? (
+                /* Registered, event hasn't started yet */
+                <>
+                  <div className="hdp-registered-state">
+                    <span className="hdp-registered-state__check">✓</span>
+                    <span className="hdp-registered-state__text">You&apos;re Registered</span>
+                  </div>
+                  {registration.teamName && (
+                    <p className="hdp-cta-hint">Team: {registration.teamName}</p>
+                  )}
+                  <button
+                    type="button"
+                    className="hdp-edit-link"
+                    onClick={() => setShowRegModal(true)}
+                  >
+                    Edit Registration
+                  </button>
+                </>
+              ) : registration && canSubmitProject && !submission ? (
+                /* Registered, event active or ended, no submission yet */
+                <>
+                  <div className="hdp-registered-state hdp-registered-state--sm">
+                    <span className="hdp-registered-state__check">✓</span>
+                    <span className="hdp-registered-state__text">You&apos;re Registered</span>
+                  </div>
+                  <button
+                    type="button"
+                    className="hdp-register hdp-register--submit"
+                    onClick={() => setShowSubModal(true)}
+                  >
+                    {isCompleted ? 'Submit Your Project' : 'Submit Project Now'}
+                  </button>
+                  {isActive && (
+                    <p className="hdp-cta-hint">
+                      Submissions close when the event ends.
+                    </p>
+                  )}
+                </>
+              ) : submission ? (
+                /* Project submitted */
+                <>
+                  <div className="hdp-registered-state">
+                    <span className="hdp-registered-state__check">✓</span>
+                    <span className="hdp-registered-state__text">Project Submitted</span>
+                  </div>
+                  <p className="hdp-cta-hint" style={{ marginTop: '0.5rem' }}>
+                    {submission.projectTitle}
+                  </p>
+                  <button
+                    type="button"
+                    className="hdp-edit-link"
+                    onClick={() => setShowSubModal(true)}
+                  >
+                    Edit Submission
+                  </button>
+                </>
+              ) : null}
             </div>
 
-            {/* Reminders (logged-in only) */}
-            {userEmail && (
-              <div className="hdp-card">
-                <div className="hdp-card__header">
-                  <Bell size={13} />
-                  <span className="hdp-card__label">Email Reminders</span>
-                  {reminderSaving && <span className="hdp-card__saving">saving…</span>}
-                </div>
-                {!reminderLoaded ? (
-                  <ul className="hdp-reminders hdp-reminders--loading">
-                    {[0, 1, 2].map((i) => <li key={i} className="hdp-skel hdp-skel--row" />)}
-                  </ul>
-                ) : (
-                  <ul className="hdp-reminders">
-                    {REMINDER_OPTIONS.map(({ key, label, desc }) => (
-                      <li
-                        key={key}
-                        className="hdp-reminder"
-                        onClick={() => void handleReminderToggle(key)}
-                      >
-                        <div className={`hdp-reminder__toggle${reminders[key] ? ' hdp-reminder__toggle--on' : ''}`} />
-                        <div className="hdp-reminder__text">
-                          <span className="hdp-reminder__label">{label}</span>
-                          <span className="hdp-reminder__desc">{desc}</span>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
+            {/* ── Reminder toggle (logged-in, event not completed) ── */}
+            {userEmail && !isCompleted && (
+              <div className="hdp-card hdp-card--reminder">
+                <button
+                  type="button"
+                  className={`hdp-remind-btn${reminded ? ' hdp-remind-btn--on' : ''}`}
+                  onClick={handleReminderToggle}
+                  disabled={reminderLoading}
+                >
+                  {reminded
+                    ? <><BellOff size={14} /> Reminders On</>
+                    : <><Bell size={14} /> Remind Me</>
+                  }
+                </button>
+                {reminded && (
+                  <p className="hdp-remind-hint">
+                    We&apos;ll email you 1 week out, 3 days out, and the morning of the event.
+                  </p>
                 )}
               </div>
             )}
@@ -448,7 +511,37 @@ export default function HackathonDetailPage() {
         </div>
       </div>
 
-      {showAuthModal && <AuthModal onClose={() => setShowAuthModal(false)} />}
+      {/* Modals */}
+      {showAuthModal && (
+        <AuthModal onClose={() => setShowAuthModal(false)} />
+      )}
+
+      {showRegModal && userId && userEmail && (
+        <RegistrationModal
+          eventId={id!}
+          eventTitle={event.title}
+          colorHex={colorHex}
+          colorRgb={colorRgb}
+          userId={userId}
+          userEmail={userEmail}
+          existing={registration}
+          onClose={() => setShowRegModal(false)}
+          onSaved={(reg) => { setRegistration(reg); setShowRegModal(false) }}
+        />
+      )}
+
+      {showSubModal && userId && (
+        <ProjectSubmissionModal
+          eventId={id!}
+          eventTitle={event.title}
+          colorHex={colorHex}
+          colorRgb={colorRgb}
+          userId={userId}
+          existing={submission}
+          onClose={() => setShowSubModal(false)}
+          onSaved={(sub) => { setSubmission(sub); setShowSubModal(false) }}
+        />
+      )}
     </>
   )
 }
