@@ -490,6 +490,53 @@
 .hs-card--orange { --card-color: #fb923c; --card-rgb: 251, 146, 60;  }
 .hs-card--green  { --card-color: #4ade80; --card-rgb: 74,  222, 128; }
 
+/* ── Skeleton loader ──────────────────────────────────────────────── */
+
+@keyframes hs-shimmer {
+  0%   { background-position: -600px 0; }
+  100% { background-position:  600px 0; }
+}
+
+.hs-skel {
+  background: linear-gradient(
+    90deg,
+    rgba(255,255,255,0.05) 25%,
+    rgba(255,255,255,0.10) 50%,
+    rgba(255,255,255,0.05) 75%
+  );
+  background-size: 600px 100%;
+  animation: hs-shimmer 1.6s ease-in-out infinite;
+  border-radius: 6px;
+}
+
+.hs-card--skeleton {
+  pointer-events: none;
+}
+
+.hs-card--skeleton .hs-card__thumb {
+  background: rgba(255,255,255,0.05);
+  border-color: transparent;
+}
+
+.hs-card--skeleton .hs-card__bar {
+  background: rgba(255,255,255,0.08);
+}
+
+.hs-skel--tag   { height: 20px; width: 80px; border-radius: 20px; }
+.hs-skel--title { height: 22px; width: 55%; margin-top: 2px; }
+.hs-skel--desc  { height: 14px; width: 80%; margin-top: 2px; }
+.hs-skel--meta  { height: 12px; width: 45%; margin-top: 4px; }
+
+.hs-skel--date-block {
+  border-left-color: rgba(255,255,255,0.05);
+  border-right-color: rgba(255,255,255,0.05);
+  gap: 6px;
+}
+
+.hs-skel--day   { height: 36px; width: 42px; border-radius: 4px; }
+.hs-skel--month { height: 12px; width: 30px; border-radius: 4px; }
+.hs-skel--cta   { height: 38px; width: 90px; border-radius: 8px; flex-shrink: 0; }
+
 /* ── Footer ───────────────────────────────────────────────────────── */
 
 .hs-footer {

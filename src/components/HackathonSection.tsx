@@ -158,6 +158,24 @@ export default function HackathonSection({ userEmail, userName, isAdmin = false,
             }
           </p>
 
+          {eventsLoading && Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="hs-card hs-card--skeleton" aria-hidden="true">
+              <div className="hs-card__bar hs-skel" />
+              <div className="hs-card__thumb hs-skel" />
+              <div className="hs-card__info">
+                <div className="hs-skel hs-skel--tag" />
+                <div className="hs-skel hs-skel--title" />
+                <div className="hs-skel hs-skel--desc" />
+                <div className="hs-skel hs-skel--meta" />
+              </div>
+              <div className="hs-card__date hs-skel--date-block">
+                <div className="hs-skel hs-skel--day" />
+                <div className="hs-skel hs-skel--month" />
+              </div>
+              <div className="hs-skel hs-skel--cta" />
+            </div>
+          ))}
+
           {!eventsLoading && filtered.length === 0 && (
             <div className="hs-empty">
               <p className="hs-empty__text">{events.length === 0 ? 'No events found.' : 'No events match your filters.'}</p>
@@ -175,7 +193,7 @@ export default function HackathonSection({ userEmail, userName, isAdmin = false,
                 <div className="hs-card__bar" />
 
                 <div className="hs-card__thumb">
-                  <img src={event.image ?? placeholderImage} alt={event.title} className="hs-card__thumb-img" />
+                  <img src={event.image ?? placeholderImage} alt={event.title} className="hs-card__thumb-img" width="90" height="90" loading="lazy" />
                 </div>
 
                 <div className="hs-card__info">

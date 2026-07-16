@@ -82,15 +82,26 @@ function eventToRow(e: EventRecord) {
   }
 }
 
+let _publicEventsCache: Promise<EventRecord[]> | null = null
+
+export function invalidatePublicEventsCache() {
+  _publicEventsCache = null
+}
+
 export async function fetchPublicEvents(): Promise<EventRecord[]> {
   if (!supabase) return []
-  const { data, error } = await supabase
-    .from('events')
-    .select('*')
-    .eq('published', true)
-    .order('start_date', { ascending: true })
-  if (error) { console.error('[events] fetchPublicEvents:', error); return [] }
-  return (data ?? []).map(rowToEvent)
+  if (!_publicEventsCache) {
+    _publicEventsCache = supabase
+      .from('events')
+      .select('*')
+      .eq('published', true)
+      .order('start_date', { ascending: true })
+      .then(({ data, error }) => {
+        if (error) { console.error('[events] fetchPublicEvents:', error); _publicEventsCache = null; return [] }
+        return (data ?? []).map(rowToEvent)
+      })
+  }
+  return _publicEventsCache
 }
 
 export async function fetchAllEvents(): Promise<EventRecord[]> {
