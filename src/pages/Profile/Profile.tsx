@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import type { Session } from '@supabase/supabase-js'
-import { ArrowLeft, Camera, Check, LogOut, X } from 'lucide-react'
+import { ArrowLeft, Camera, Check, Github, Globe, Linkedin, LogOut, Twitter, X } from 'lucide-react'
 import { isSupabaseConfigured, supabase } from '../../lib/supabase'
 import profilePlaceholder from '../../assets/profilePlaceholder.png'
 import './Profile.css'
@@ -17,12 +17,38 @@ interface ProfileData {
   location: string
   website: string
   github: string
+  linkedin: string
+  twitter: string
+  devpost: string
   bio: string
   avatarDataUrl: string | null
 }
 
 const EMPTY: ProfileData = {
-  name: '', tagline: '', location: '', website: '', github: '', bio: '', avatarDataUrl: null,
+  name: '', tagline: '', location: '', website: '', github: '',
+  linkedin: '', twitter: '', devpost: '', bio: '', avatarDataUrl: null,
+}
+
+// ── URL normalizers ────────────────────────────────────────────────
+function toAbsUrl(prefix: string, val: string): string {
+  if (!val) return ''
+  return /^https?:\/\//i.test(val) ? val : `${prefix}${val.replace(/^@/, '')}`
+}
+const socialUrl = {
+  github:   (v: string) => toAbsUrl('https://github.com/',        v),
+  linkedin: (v: string) => toAbsUrl('https://linkedin.com/in/',   v),
+  twitter:  (v: string) => toAbsUrl('https://twitter.com/',       v),
+  devpost:  (v: string) => toAbsUrl('https://devpost.com/',       v),
+  website:  (v: string) => toAbsUrl('https://',                   v),
+}
+
+// ── Inline DevPost icon (no lucide equivalent) ─────────────────────
+function DevpostIcon({ size = 18 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M6.002 1.61L0 12.004 6.002 22.39h11.996L24 12.004 17.998 1.61zm1.593 16.526l-3.274-6.132 3.274-6.132h4.409l3.274 6.132-3.274 6.132z"/>
+    </svg>
+  )
 }
 
 function formatName(session: Session | null): string {
@@ -99,7 +125,7 @@ export default function Profile() {
   }
 
   function saveAbout() {
-    const next = { ...saved, location: draft.location, website: draft.website, github: draft.github, bio: draft.bio }
+    const next = { ...saved, location: draft.location, website: draft.website, github: draft.github, linkedin: draft.linkedin, twitter: draft.twitter, devpost: draft.devpost, bio: draft.bio }
     setSaved(next)
     persist(next)
     setIsEditingAbout(false)
@@ -216,6 +242,37 @@ export default function Profile() {
               </p>
             )}
 
+            {/* Social links */}
+            {(saved.github || saved.linkedin || saved.twitter || saved.devpost || saved.website) && !isEditingHero && (
+              <div className="pf-hero__socials">
+                {saved.github && (
+                  <a href={socialUrl.github(saved.github)} target="_blank" rel="noreferrer" className="pf-social pf-social--github" title="GitHub">
+                    <Github size={17} />
+                  </a>
+                )}
+                {saved.linkedin && (
+                  <a href={socialUrl.linkedin(saved.linkedin)} target="_blank" rel="noreferrer" className="pf-social pf-social--linkedin" title="LinkedIn">
+                    <Linkedin size={17} />
+                  </a>
+                )}
+                {saved.twitter && (
+                  <a href={socialUrl.twitter(saved.twitter)} target="_blank" rel="noreferrer" className="pf-social pf-social--twitter" title="Twitter / X">
+                    <Twitter size={17} />
+                  </a>
+                )}
+                {saved.devpost && (
+                  <a href={socialUrl.devpost(saved.devpost)} target="_blank" rel="noreferrer" className="pf-social pf-social--devpost" title="DevPost">
+                    <DevpostIcon size={17} />
+                  </a>
+                )}
+                {saved.website && (
+                  <a href={socialUrl.website(saved.website)} target="_blank" rel="noreferrer" className="pf-social pf-social--website" title="Website">
+                    <Globe size={17} />
+                  </a>
+                )}
+              </div>
+            )}
+
             <div className="pf-hero__actions">
               {isEditingHero ? (
                 <>
@@ -322,7 +379,34 @@ export default function Profile() {
                     className="pf-input pf-input--field"
                     value={draft.github}
                     onChange={(e) => setField('github', e.target.value)}
-                    placeholder="github.com/username"
+                    placeholder="yourhandle"
+                  />
+                </label>
+                <label className="pf-label">
+                  LinkedIn
+                  <input
+                    className="pf-input pf-input--field"
+                    value={draft.linkedin}
+                    onChange={(e) => setField('linkedin', e.target.value)}
+                    placeholder="yourname"
+                  />
+                </label>
+                <label className="pf-label">
+                  Twitter / X
+                  <input
+                    className="pf-input pf-input--field"
+                    value={draft.twitter}
+                    onChange={(e) => setField('twitter', e.target.value)}
+                    placeholder="@yourhandle"
+                  />
+                </label>
+                <label className="pf-label">
+                  DevPost
+                  <input
+                    className="pf-input pf-input--field"
+                    value={draft.devpost}
+                    onChange={(e) => setField('devpost', e.target.value)}
+                    placeholder="yourhandle"
                   />
                 </label>
                 <label className="pf-label">
@@ -367,7 +451,33 @@ export default function Profile() {
                 {saved.github && (
                   <div className="pf-about__row">
                     <span className="pf-about__label">GitHub</span>
-                    <a href={`https://${saved.github.replace(/^https?:\/\//, '')}`} target="_blank" rel="noreferrer" className="pf-about__link">{saved.github}</a>
+                    <a href={socialUrl.github(saved.github)} target="_blank" rel="noreferrer" className="pf-about__link pf-about__link--github">
+                      <Github size={13} /> {saved.github.replace(/^https?:\/\/(www\.)?github\.com\//i, '')}
+                    </a>
+                  </div>
+                )}
+                {saved.linkedin && (
+                  <div className="pf-about__row">
+                    <span className="pf-about__label">LinkedIn</span>
+                    <a href={socialUrl.linkedin(saved.linkedin)} target="_blank" rel="noreferrer" className="pf-about__link pf-about__link--linkedin">
+                      <Linkedin size={13} /> {saved.linkedin.replace(/^https?:\/\/(www\.)?linkedin\.com\/in\//i, '')}
+                    </a>
+                  </div>
+                )}
+                {saved.twitter && (
+                  <div className="pf-about__row">
+                    <span className="pf-about__label">Twitter / X</span>
+                    <a href={socialUrl.twitter(saved.twitter)} target="_blank" rel="noreferrer" className="pf-about__link pf-about__link--twitter">
+                      <Twitter size={13} /> {saved.twitter.replace(/^https?:\/\/(www\.)?twitter\.com\//i, '@')}
+                    </a>
+                  </div>
+                )}
+                {saved.devpost && (
+                  <div className="pf-about__row">
+                    <span className="pf-about__label">DevPost</span>
+                    <a href={socialUrl.devpost(saved.devpost)} target="_blank" rel="noreferrer" className="pf-about__link pf-about__link--devpost">
+                      <DevpostIcon size={13} /> {saved.devpost.replace(/^https?:\/\/(www\.)?devpost\.com\//i, '')}
+                    </a>
                   </div>
                 )}
                 {saved.bio && (

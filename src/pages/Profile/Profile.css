@@ -193,6 +193,35 @@
   border-color: #1a1a2e;
 }
 
+/* ── Social icon bar ────────────────────────────────────────────── */
+.pf-hero__socials {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.pf-social {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.07);
+  color: rgba(0, 0, 0, 0.45);
+  text-decoration: none;
+  transition: background 0.18s, color 0.18s, transform 0.15s;
+}
+
+.pf-social:hover { transform: translateY(-2px); }
+
+.pf-social--github:hover   { background: rgba(0, 0, 0, 0.1);       color: #111; }
+.pf-social--linkedin:hover { background: rgba(0, 119, 181, 0.12);   color: #0077b5; }
+.pf-social--twitter:hover  { background: rgba(29, 161, 242, 0.12);  color: #1da1f2; }
+.pf-social--devpost:hover  { background: rgba(0, 62, 84, 0.1);      color: #003e54; }
+.pf-social--website:hover  { background: rgba(51, 255, 51, 0.12);   color: #1a9e1a; }
+
 /* ── Action buttons ─────────────────────────────────────────────── */
 .pf-hero__actions {
   display: flex;
@@ -553,11 +582,23 @@
 }
 
 .pf-about__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   font-size: 14px;
   color: #1a1a2e;
-  text-decoration: underline;
-  text-underline-offset: 3px;
+  text-decoration: none;
+  border-bottom: 1px solid rgba(0,0,0,0.15);
+  padding-bottom: 1px;
+  transition: color 0.15s, border-color 0.15s;
 }
+
+.pf-about__link:hover { border-color: currentColor; }
+
+.pf-about__link--github:hover   { color: #111; }
+.pf-about__link--linkedin:hover { color: #0077b5; }
+.pf-about__link--twitter:hover  { color: #1da1f2; }
+.pf-about__link--devpost:hover  { color: #003e54; }
 
 .pf-about__bio {
   font-size: 14px;
