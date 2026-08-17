@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { ArrowLeft, Bell, BellOff, Calendar, Clock, MapPin, Trophy, Users } from 'lucide-react'
 import placeholderImage from '../../assets/placeholderImage.png'
 import {
@@ -11,12 +11,14 @@ import {
   type EventRecord,
 } from '../../lib/eventUtils'
 import {
+  claimGuestRegistrations,
   fetchRegistration,
   fetchSubmission,
   type Registration,
   type ProjectSubmission,
 } from '../../lib/registrationUtils'
 import { isSupabaseConfigured, supabase } from '../../lib/supabase'
+import { useNavScroll } from '../../hooks/useNavScroll'
 import HackathonNavbar from '../../components/navigation/HackathonNavbar'
 import AuthModal from '../../components/auth/AuthModal'
 import RegistrationModal from '../../components/registration/RegistrationModal'
@@ -118,14 +120,15 @@ function DetailSkeleton() {
 export default function HackathonDetailPage() {
   const { id }   = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
 
   const [event,    setEvent]    = useState<EventRecord | null>(null)
   const [loading,  setLoading]  = useState(true)
   const [notFound, setNotFound] = useState(false)
-  const [scrolled, setScrolled] = useState(false)
+  const { scrolled, hidden: navHidden } = useNavScroll()
 
   const [showAuthModal,         setShowAuthModal]         = useState(false)
-  const [showRegModal,          setShowRegModal]          = useState(false)
+  const [showRegModal,          setShowRegModal]          = useState(() => searchParams.get('register') === 'true')
   const [showSubModal,          setShowSubModal]          = useState(false)
 
   const [userEmail, setUserEmail] = useState<string | null>(null)
@@ -140,12 +143,6 @@ export default function HackathonDetailPage() {
   const [reminded,      setReminded]      = useState(false)
   const [reminderLoading, setReminderLoading] = useState(false)
 
-  // Scroll listener
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 40)
-    window.addEventListener('scroll', onScroll, { passive: true })
-    return () => window.removeEventListener('scroll', onScroll)
-  }, [])
 
   // Load event (instant from cache if coming from list page)
   useEffect(() => {
@@ -178,11 +175,11 @@ export default function HackathonDetailPage() {
   useEffect(() => {
     if (!userId || !id) { setRegLoading(false); return }
     setRegLoading(true)
-    Promise.all([
+    claimGuestRegistrations().then(() => Promise.all([
       fetchRegistration(id, userId),
       fetchSubmission(id, userId),
       fetchReminderSubscribed(id, userId),
-    ]).then(([reg, sub, rem]) => {
+    ])).then(([reg, sub, rem]) => {
       setRegistration(reg)
       setSubmission(sub)
       setReminded(rem)
@@ -243,13 +240,14 @@ export default function HackathonDetailPage() {
   // ── CTA logic ─────────────────────────────────────────────────────
   // What to show in the sidebar CTA depends on auth + registration + event phase
 
-  const canSubmitProject = (isActive || isCompleted) && !!registration
+  const canSubmitProject = (isActive || isCompleted) && !!registration && !!userId
 
   return (
     <>
       <div className="hdp" style={pageStyle}>
         <HackathonNavbar
           activeSection={1}
+          hidden={navHidden}
           scrolled={scrolled}
           links={[{ label: 'Hackathons', index: 1 }]}
           onNavigate={(i) => { if (i === 0) navigate('/'); else if (i === 1) navigate('/hackathons') }}
@@ -398,33 +396,14 @@ export default function HackathonDetailPage() {
             <div className="hdp-card hdp-card--cta">
               {regLoading ? (
                 <div className="hdp-skel" style={{ height: 44, borderRadius: 10 }} />
-              ) : !userEmail ? (
-                /* Not logged in */
-                <>
-                  <button
-                    type="button"
-                    className="hdp-register"
-                    onClick={() => setShowAuthModal(true)}
-                  >
-                    Sign In to Register
-                  </button>
-                  <p className="hdp-cta-hint">
-                    Create a free account to register and track this event.
-                  </p>
-                </>
-              ) : !registration && !isOpen && !isActive ? (
-                /* Logged in, registration not open */
-                <button type="button" className="hdp-register hdp-register--disabled" disabled>
-                  {isCompleted ? 'Event Ended' : 'Registration Not Open Yet'}
-                </button>
-              ) : !registration && (isOpen || isActive) ? (
-                /* Logged in, can register */
+              ) : !registration ? (
+                /* Not registered — always show a clickable register button */
                 <button
                   type="button"
-                  className="hdp-register"
+                  className={`hdp-register${!isOpen && !isActive ? ' hdp-register--disabled' : ''}`}
                   onClick={() => setShowRegModal(true)}
                 >
-                  Register Now
+                  {isCompleted ? 'Event Ended' : !isOpen && !isActive ? 'Registration Not Open Yet' : 'Register Now'}
                 </button>
               ) : registration && !canSubmitProject ? (
                 /* Registered, event hasn't started yet */
@@ -516,7 +495,7 @@ export default function HackathonDetailPage() {
         <AuthModal onClose={() => setShowAuthModal(false)} />
       )}
 
-      {showRegModal && userId && userEmail && (
+      {showRegModal && (
         <RegistrationModal
           eventId={id!}
           eventTitle={event.title}

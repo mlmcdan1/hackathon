@@ -1,8 +1,6 @@
 import type { CSSProperties } from 'react'
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import claudeRetroPC from '../../assets/ClaudeRetroPC.jpeg'
-import computerIcon from '../../assets/ComputerIcon.png'
 import Lenis from 'lenis'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
@@ -10,6 +8,7 @@ import { isSupabaseConfigured, supabase } from '../../lib/supabase'
 import HackathonNavbar from '../../components/navigation/HackathonNavbar'
 import GameboysSection from '../../components/gameboys/GameboysSection'
 import GlitchySection from '../../components/glitchy/GlitchySection'
+import ExploreSection from '../../components/explore/ExploreSection'
 import AuthModal from '../../components/auth/AuthModal'
 import RetroLoadingScreen from '../../components/hero/RetroLoadingScreen'
 import './HackathonPage.css'
@@ -203,6 +202,7 @@ export default function Homepage() {
 
 
 
+
   // Global cursor-driven tilt for section 2 image
   useEffect(() => {
     if (loadingMounted) return
@@ -377,7 +377,14 @@ export default function Homepage() {
       {/* ── Section 2: Intro — large right photo, text bleeds over it from left ── */}
       <section className="hp-intro">
         <div className="hp-intro__img-frame" aria-hidden="true">
-          <img src={claudeRetroPC} alt="" className="hp-intro__img" />
+          <video
+            className="hp-intro__img"
+            src="/video/typing.mp4"
+            autoPlay
+            loop
+            muted
+            playsInline
+          />
         </div>
         <div className="hp-intro__content">
           <span className="hp-intro__eyebrow">
@@ -389,22 +396,7 @@ export default function Homepage() {
 
       {/* ── Section 3: Explore Hackathons ── */}
       <section className="hp-explore">
-        {/* Floating game elements */}
-        <span className="hp-explore__float hp-explore__float--1" aria-hidden="true">🎮</span>
-        <span className="hp-explore__float hp-explore__float--2" aria-hidden="true">🏆</span>
-        <span className="hp-explore__float hp-explore__float--3" aria-hidden="true">⚡</span>
-        <span className="hp-explore__float hp-explore__float--4" aria-hidden="true">🎲</span>
-        <span className="hp-explore__float hp-explore__float--5" aria-hidden="true">🕹️</span>
-        <img src={computerIcon} className="hp-explore__float hp-explore__float--6" alt="" aria-hidden="true" />
-
-        {/* Center content */}
-        <div className="hp-explore__center">
-          <p className="hp-explore__eyebrow">Augusta Dev</p>
-          <h2 className="hp-explore__heading">Explore<br />Hackathons</h2>
-          <button type="button" className="hp-explore__cta" onClick={() => navigate('/hackathons')}>
-            EXPLORE
-          </button>
-        </div>
+        <ExploreSection onExplore={() => navigate('/hackathons')} />
       </section>
 
       {/* ── Retro world sections ── */}

@@ -136,6 +136,21 @@ export default function ChatWidget() {
     init()
   }, [])
 
+  // "Talk to Glitchy" button fires this event — Glitchy speaks first, no user message
+  useEffect(() => {
+    const handler = () => {
+      setIsOpen(true)
+      setHasOpened(true)
+      setMessages((prev) =>
+        prev.length === 0
+          ? [{ role: 'model', text: "⚡ Glitchy online. Drop an idea, a problem, a vibe — anything. Let's build something wild." }]
+          : prev
+      )
+    }
+    window.addEventListener('glitchy:open', handler)
+    return () => window.removeEventListener('glitchy:open', handler)
+  }, [])
+
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])

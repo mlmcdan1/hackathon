@@ -1,4 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
+
+function playGameStart() {
+  const snd = new Audio('/GameStart.wav')
+  snd.volume = 0.7
+  snd.play().catch(() => {})
+}
 import { Check, X } from 'lucide-react'
 import {
   createRegistration,
@@ -12,8 +18,8 @@ interface Props {
   eventTitle:  string
   colorHex:    string
   colorRgb:    string
-  userId:      string
-  userEmail:   string
+  userId:      string | null
+  userEmail:   string | null
   existing:    Registration | null
   onClose:     () => void
   onSaved:     (reg: Registration) => void
@@ -25,7 +31,10 @@ export default function RegistrationModal({
   eventId, eventTitle, colorHex, colorRgb,
   userId, userEmail, existing, onClose, onSaved,
 }: Props) {
+  const isGuest = !userId
+
   const [fullName,        setFullName]        = useState(existing?.fullName        ?? '')
+  const [guestEmail,      setGuestEmail]      = useState(existing?.email ?? '')
   const [teamName,        setTeamName]        = useState(existing?.teamName        ?? '')
   const [teamMembers,     setTeamMembers]     = useState(existing?.teamMembers     ?? '')
   const [experienceLevel, setExperienceLevel] = useState(existing?.experienceLevel ?? 'Beginner')
@@ -56,7 +65,13 @@ export default function RegistrationModal({
   const handleSubmit = async () => {
     setError(null)
     if (!fullName.trim()) { setError('Full name is required.'); return }
-    if (!agreed)          { setError('Please agree to the event rules.'); return }
+    if (isGuest) {
+      if (!guestEmail.trim()) { setError('Email is required.'); return }
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(guestEmail.trim())) { setError('Please enter a valid email address.'); return }
+    }
+    if (!agreed) { setError('Please agree to the event rules.'); return }
+
+    const email = isGuest ? guestEmail.trim() : (userEmail ?? '')
 
     setSaving(true)
     try {
@@ -69,19 +84,28 @@ export default function RegistrationModal({
           projectIdea: projectIdea.trim(),
         })
         if (!ok) { setError('Failed to update registration. Please try again.'); return }
+        playGameStart()
         onSaved({ ...existing, fullName: fullName.trim(), teamName: teamName.trim(), teamMembers: teamMembers.trim(), experienceLevel, projectIdea: projectIdea.trim() })
       } else {
-        const reg = await createRegistration({
+        const { data: reg, errorCode } = await createRegistration({
           eventId,
           userId,
           fullName: fullName.trim(),
-          email: userEmail,
+          email,
           teamName: teamName.trim(),
           teamMembers: teamMembers.trim(),
           experienceLevel,
           projectIdea: projectIdea.trim(),
         })
-        if (!reg) { setError('Failed to register. Please try again.'); return }
+        if (!reg) {
+          if (errorCode === '23505') {
+            setError('This email is already registered for this event.')
+          } else {
+            setError('Failed to register. Please try again.')
+          }
+          return
+        }
+        playGameStart()
         onSaved(reg)
       }
     } finally {
@@ -132,14 +156,26 @@ export default function RegistrationModal({
               />
             </div>
             <div className="reg-field">
-              <label className="reg-label">Email</label>
-              <input
-                className="reg-input"
-                type="email"
-                value={userEmail}
-                disabled
-                readOnly
-              />
+              <label className="reg-label">
+                Email {isGuest && <span aria-hidden="true">*</span>}
+              </label>
+              {isGuest ? (
+                <input
+                  className="reg-input"
+                  type="email"
+                  value={guestEmail}
+                  onChange={(e) => setGuestEmail(e.target.value)}
+                  placeholder="you@example.com"
+                />
+              ) : (
+                <input
+                  className="reg-input"
+                  type="email"
+                  value={userEmail ?? ''}
+                  disabled
+                  readOnly
+                />
+              )}
             </div>
           </div>
 

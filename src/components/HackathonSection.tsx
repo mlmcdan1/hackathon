@@ -1,6 +1,13 @@
 import { MapPin, Trophy, Users, X } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
+
+let _hoverSnd: HTMLAudioElement | null = null
+function playHoverSound() {
+  if (!_hoverSnd) { _hoverSnd = new Audio('/ButtonHoverSound.wav'); _hoverSnd.volume = 0.35 }
+  _hoverSnd.currentTime = 0
+  _hoverSnd.play().catch(() => {})
+}
 import placeholderImage from '../assets/placeholderImage.png'
 import {
   computeStatus,
@@ -12,6 +19,14 @@ import {
   publicStatusLabel,
   type EventRecord,
 } from '../lib/eventUtils'
+import {
+  claimGuestRegistrations,
+  fetchRegistrationsForUser,
+  fetchSubmissionsForUser,
+  type ProjectSubmission,
+  type Registration,
+} from '../lib/registrationUtils'
+import { useNavScroll } from '../hooks/useNavScroll'
 import HackathonNavbar from './navigation/HackathonNavbar'
 import './HackathonSection.css'
 
@@ -26,30 +41,41 @@ const TYPE_OPTS: EventType[]        = ['All', 'Hackathon', 'Workshop', 'Summit',
 interface Props {
   userEmail: string | null
   userName?: string | null
+  userId?: string | null
   isAdmin?: boolean
   onSignIn: () => void
   onSignOut: () => void
   onNavigateHome: () => void
+  onRegister: (event: EventRecord) => void
+  onSubmitProject: (event: EventRecord, existing: ProjectSubmission | null) => void
+  refreshKey?: number
 }
 
-export default function HackathonSection({ userEmail, userName, isAdmin = false, onSignIn, onSignOut, onNavigateHome }: Props) {
+export default function HackathonSection({ userEmail, userName, userId = null, isAdmin = false, onSignIn, onSignOut, onNavigateHome, onRegister, onSubmitProject, refreshKey = 0 }: Props) {
   const navigate = useNavigate()
-  const [scrolled, setScrolled]   = useState(false)
+  const { scrolled, hidden } = useNavScroll()
   const [format, setFormat]       = useState<Format>('All')
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('All')
   const [eventType, setEventType] = useState<EventType>('All')
   const [events, setEvents]       = useState<EventRecord[]>([])
   const [eventsLoading, setEventsLoading] = useState(true)
-
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 40)
-    window.addEventListener('scroll', onScroll, { passive: true })
-    return () => window.removeEventListener('scroll', onScroll)
-  }, [])
+  const [myRegistrations, setMyRegistrations] = useState<Registration[]>([])
+  const [mySubmissions, setMySubmissions]     = useState<ProjectSubmission[]>([])
 
   useEffect(() => {
     fetchPublicEvents().then((data) => { setEvents(data); setEventsLoading(false) })
   }, [])
+
+  useEffect(() => {
+    if (!userId) { setMyRegistrations([]); setMySubmissions([]); return }
+    claimGuestRegistrations().then(() => Promise.all([
+      fetchRegistrationsForUser(userId),
+      fetchSubmissionsForUser(userId),
+    ])).then(([regs, subs]) => { setMyRegistrations(regs); setMySubmissions(subs) })
+  }, [userId, refreshKey])
+
+  const regByEvent = useMemo(() => new Map(myRegistrations.map((r) => [r.eventId, r])), [myRegistrations])
+  const subByEvent = useMemo(() => new Map(mySubmissions.map((s) => [s.eventId, s])), [mySubmissions])
 
   const filtered = useMemo(() => events.filter((e) => {
     const status = computeStatus(e)
@@ -74,6 +100,7 @@ export default function HackathonSection({ userEmail, userName, isAdmin = false,
 
       <HackathonNavbar
         activeSection={1}
+        hidden={hidden}
         scrolled={scrolled}
         links={[{ label: 'Hackathons', index: 1 }]}
         onNavigate={(i) => { if (i === 0) onNavigateHome() }}
@@ -190,16 +217,18 @@ export default function HackathonSection({ userEmail, userName, isAdmin = false,
             const statusLabel = publicStatusLabel(status)
             const loc         = event.format === 'virtual' ? 'Online' : event.location
             const isOpen      = status === 'open-reg' || status === 'active'
+            const registration = regByEvent.get(event.id) ?? null
+            const submission   = subByEvent.get(event.id) ?? null
+            const canSubmitProject = (status === 'active' || status === 'completed') && !!registration
             return (
               <article
                 key={event.id}
                 className={`hs-card hs-card--${event.color}`}
-                onClick={() => navigate(`/hackathons/${event.id}`)}
               >
                 <div className="hs-card__bar" />
 
                 <div className="hs-card__thumb">
-                  <img src={event.image ?? placeholderImage} alt={event.title} className="hs-card__thumb-img" width="90" height="90" loading="lazy" />
+                  <img src={event.image ?? placeholderImage} alt={event.title} className="hs-card__thumb-img" width="112" height="112" loading="lazy" />
                 </div>
 
                 <div className="hs-card__info">
@@ -224,14 +253,44 @@ export default function HackathonSection({ userEmail, userName, isAdmin = false,
                   <span className="hs-card__year">{displayYear(event)}</span>
                 </div>
 
-                <button
-                  type="button"
-                  className={`hs-card__cta${!isOpen ? ' hs-card__cta--disabled' : ''}`}
-                  onClick={(e) => { e.stopPropagation(); navigate(`/hackathons/${event.id}`) }}
-                  aria-label={`View ${event.title}`}
-                >
-                  {isOpen ? 'Register' : statusLabel}
-                </button>
+                <div className="hs-card__actions">
+                  {submission ? (
+                    <button
+                      type="button"
+                      className="hs-card__cta hs-card__cta--submit"
+                      onClick={() => onSubmitProject(event, submission)}
+                    >
+                      Edit Submission
+                    </button>
+                  ) : canSubmitProject ? (
+                    <button
+                      type="button"
+                      className="hs-card__cta hs-card__cta--submit"
+                      onClick={() => onSubmitProject(event, null)}
+                    >
+                      Submit Project
+                    </button>
+                  ) : registration ? (
+                    <span className="hs-card__cta hs-card__cta--disabled">Registered</span>
+                  ) : isOpen ? (
+                    <button
+                      type="button"
+                      className="hs-card__cta"
+                      onClick={() => onRegister(event)}
+                    >
+                      Register
+                    </button>
+                  ) : (
+                    <span className="hs-card__cta hs-card__cta--disabled">{statusLabel}</span>
+                  )}
+                  <Link
+                    to={`/hackathons/${event.id}`}
+                    className="hs-card__details"
+                    onMouseEnter={playHoverSound}
+                  >
+                    View Details
+                  </Link>
+                </div>
               </article>
             )
           })}

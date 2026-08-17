@@ -9,12 +9,23 @@ import {
   fetchAllEvents,
   getEndDateTime,
   getStartDateTime,
+  invalidatePublicEventsCache,
   newBlankEvent,
   publicStatusLabel,
   upsertEvent,
   type ComputedStatus,
   type EventRecord,
 } from '../../lib/eventUtils'
+import {
+  fetchRegistrationsForEvent,
+  fetchSubmissionsForEvent,
+  markSubmissionViewed,
+  setSubmissionRank,
+  setSubmissionShortlisted,
+  type ProjectSubmission,
+  type Registration,
+  type SubmissionRank,
+} from '../../lib/registrationUtils'
 import './AdminPage.css'
 
 // ── Helpers ───────────────────────────────────────────────────
@@ -518,6 +529,202 @@ function EditModal({
   )
 }
 
+// ── Submissions Page ──────────────────────────────────────────
+
+function IconStar({ filled }: { filled: boolean }) {
+  return (
+    <svg viewBox="0 0 24 24" fill={filled ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+    </svg>
+  )
+}
+
+function IconChevron({ open }: { open: boolean }) {
+  return (
+    <svg
+      viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+      style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 150ms ease' }}
+    >
+      <polyline points="6 9 12 15 18 9" />
+    </svg>
+  )
+}
+
+type SubFilter = 'all' | 'unviewed' | 'shortlisted'
+const RANKS: SubmissionRank[] = ['1st', '2nd', '3rd']
+
+function SubmissionsPage({
+  event,
+  onClose,
+}: {
+  event: EventRecord
+  onClose: () => void
+}) {
+  const [loading, setLoading] = useState(true)
+  const [submissions, setSubmissions] = useState<ProjectSubmission[]>([])
+  const [registrations, setRegistrations] = useState<Registration[]>([])
+  const [expandedId, setExpandedId] = useState<string | null>(null)
+  const [filter, setFilter] = useState<SubFilter>('all')
+
+  useEffect(() => {
+    let cancelled = false
+    Promise.all([
+      fetchSubmissionsForEvent(event.id),
+      fetchRegistrationsForEvent(event.id),
+    ]).then(([subs, regs]) => {
+      if (cancelled) return
+      setSubmissions(subs)
+      setRegistrations(regs)
+      setLoading(false)
+    })
+    return () => { cancelled = true }
+  }, [event.id])
+
+  const regByUser = new Map(registrations.map((r) => [r.userId, r]))
+
+  function handleExpand(sub: ProjectSubmission) {
+    const opening = expandedId !== sub.id
+    setExpandedId(opening ? sub.id : null)
+    if (opening && !sub.adminViewedAt) {
+      const now = new Date().toISOString()
+      setSubmissions((prev) => prev.map((s) => (s.id === sub.id ? { ...s, adminViewedAt: now } : s)))
+      markSubmissionViewed(sub.id)
+    }
+  }
+
+  function handleToggleShortlist(sub: ProjectSubmission) {
+    const next = !sub.adminShortlisted
+    setSubmissions((prev) => prev.map((s) => (s.id === sub.id ? { ...s, adminShortlisted: next } : s)))
+    setSubmissionShortlisted(sub.id, next)
+  }
+
+  function handleSetRank(sub: ProjectSubmission, rank: SubmissionRank) {
+    const nextRank = sub.adminRank === rank ? null : rank
+    setSubmissions((prev) => prev.map((s) => {
+      if (s.id === sub.id) return { ...s, adminRank: nextRank }
+      if (nextRank && s.adminRank === nextRank) return { ...s, adminRank: null }
+      return s
+    }))
+    setSubmissionRank(sub.id, nextRank)
+  }
+
+  const visible = submissions.filter((s) => {
+    if (filter === 'unviewed') return !s.adminViewedAt
+    if (filter === 'shortlisted') return s.adminShortlisted
+    return true
+  })
+  const viewedCount = submissions.filter((s) => s.adminViewedAt).length
+  const shortlistedCount = submissions.filter((s) => s.adminShortlisted).length
+
+  return (
+    <div className="adm-subpage">
+      <div className="adm-subpage__head">
+        <button className="adm-subpage__back" onClick={onClose}>← Back</button>
+        <div className="adm-subpage__heading">
+          <h1 className="adm-subpage__title">{event.title}</h1>
+          <p className="adm-subpage__count">
+            {submissions.length} submission{submissions.length === 1 ? '' : 's'}
+            {' · '}{viewedCount} viewed{' · '}{shortlistedCount} shortlisted
+          </p>
+        </div>
+      </div>
+
+      <div className="adm-subpage__filters">
+        {(['all', 'unviewed', 'shortlisted'] as SubFilter[]).map((f) => (
+          <button
+            key={f}
+            className={`adm-subpage__filter${filter === f ? ' is-active' : ''}`}
+            onClick={() => setFilter(f)}
+          >
+            {f === 'all' ? 'All' : f === 'unviewed' ? 'Unviewed' : 'Shortlisted'}
+          </button>
+        ))}
+      </div>
+
+      <div className="adm-subpage__list">
+        {loading ? (
+          <p className="adm-sub-empty">Loading submissions…</p>
+        ) : visible.length === 0 ? (
+          <p className="adm-sub-empty">
+            {submissions.length === 0 ? 'No projects submitted yet.' : 'Nothing matches this filter.'}
+          </p>
+        ) : (
+          visible.map((sub) => {
+            const reg = regByUser.get(sub.userId)
+            const links: Array<[string, string]> = [
+              ['GitHub', sub.githubUrl],
+              ['Demo', sub.demoUrl],
+              ['Video', sub.videoUrl],
+              ['Slides', sub.slidesUrl],
+            ].filter(([, url]) => !!url) as Array<[string, string]>
+            const isOpen = expandedId === sub.id
+            const isNew = !sub.adminViewedAt
+
+            return (
+              <div className={`adm-sub-card${isOpen ? ' is-open' : ''}`} key={sub.id}>
+                <button className="adm-sub-card__row" onClick={() => handleExpand(sub)}>
+                  {sub.adminRank && <span className={`adm-sub-card__rank adm-sub-card__rank--${sub.adminRank}`}>{sub.adminRank}</span>}
+                  <div className="adm-sub-card__row-main">
+                    <span className="adm-sub-card__title">{sub.projectTitle}</span>
+                    {reg && <span className="adm-sub-card__team">{reg.fullName}{reg.teamName ? ` · ${reg.teamName}` : ''}</span>}
+                  </div>
+                  {isNew && <span className="adm-sub-card__badge">New</span>}
+                  <span
+                    className={`adm-sub-card__star${sub.adminShortlisted ? ' is-on' : ''}`}
+                    role="button"
+                    tabIndex={0}
+                    onClick={(e) => { e.stopPropagation(); handleToggleShortlist(sub) }}
+                    onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); handleToggleShortlist(sub) } }}
+                    title={sub.adminShortlisted ? 'Remove from shortlist' : 'Add to shortlist'}
+                  >
+                    <IconStar filled={sub.adminShortlisted} />
+                  </span>
+                  <span className="adm-sub-card__date">
+                    {new Date(sub.submittedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                  </span>
+                  <IconChevron open={isOpen} />
+                </button>
+
+                {isOpen && (
+                  <div className="adm-sub-card__detail">
+                    <p className="adm-sub-card__desc">{sub.description}</p>
+
+                    {sub.techStack && <p className="adm-sub-card__tech">{sub.techStack}</p>}
+
+                    {links.length > 0 && (
+                      <div className="adm-sub-card__links">
+                        {links.map(([label, url]) => (
+                          <a key={label} href={url} target="_blank" rel="noopener noreferrer" className="adm-sub-card__link">
+                            <IconExternalLink />
+                            {label}
+                          </a>
+                        ))}
+                      </div>
+                    )}
+
+                    <div className="adm-sub-card__rankrow">
+                      <span className="adm-sub-card__rankrow-label">Placement:</span>
+                      {RANKS.map((rank) => (
+                        <button
+                          key={rank}
+                          className={`adm-sub-card__rankbtn adm-sub-card__rankbtn--${rank}${sub.adminRank === rank ? ' is-active' : ''}`}
+                          onClick={() => handleSetRank(sub, rank)}
+                        >
+                          {rank}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )
+          })
+        )}
+      </div>
+    </div>
+  )
+}
+
 // ── Admin Management Panel ────────────────────────────────────
 
 interface AdminRecord {
@@ -661,6 +868,7 @@ export default function AdminPage() {
   const [view, setView]                     = useState<AdminView>('events')
   const [showGenerateModal, setShowGenerateModal] = useState(false)
   const [opError, setOpError]               = useState<string | null>(null)
+  const [viewingSubmissionsFor, setViewingSubmissionsFor] = useState<EventRecord | null>(null)
 
   const PAGE_SIZE = 5
 
@@ -712,6 +920,7 @@ export default function AdminPage() {
     setOpError(null)
     const saved = await upsertEvent(updated)
     if (saved) {
+      invalidatePublicEventsCache()
       setEvents((prev) => {
         const idx = prev.findIndex((e) => e.id === saved.id)
         return idx >= 0 ? prev.map((e) => e.id === saved.id ? saved : e) : [saved, ...prev]
@@ -730,6 +939,7 @@ export default function AdminPage() {
     setOpError(null)
     const ok = await deleteEvent(id)
     if (ok) {
+      invalidatePublicEventsCache()
       setEvents((prev) => prev.filter((e) => e.id !== id))
       setSelected(null)
     } else {
@@ -961,6 +1171,13 @@ export default function AdminPage() {
         />
       )}
 
+      {viewingSubmissionsFor && (
+        <SubmissionsPage
+          event={viewingSubmissionsFor}
+          onClose={() => setViewingSubmissionsFor(null)}
+        />
+      )}
+
       {/* Right panel — detail (events view only) */}
       {view === 'events' && (
         <div className="adm-detail">
@@ -993,6 +1210,13 @@ export default function AdminPage() {
                   <IconTrash />
                 </button>
               </div>
+
+              <button
+                className="adm-detail__submissions"
+                onClick={() => setViewingSubmissionsFor(selected)}
+              >
+                Submissions
+              </button>
 
               <p className="adm-detail__desc">{selected.description}</p>
 

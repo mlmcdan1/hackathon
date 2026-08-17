@@ -158,7 +158,11 @@ export default function GlitchySection() {
           team ideas, tech stack advice, or just vibe. Built to help you ship
           faster and think bigger.
         </p>
-        <button className="glitchy-info__cta" type="button">
+        <button
+          className="glitchy-info__cta"
+          type="button"
+          onClick={() => window.dispatchEvent(new CustomEvent('glitchy:open'))}
+        >
           Talk to Glitchy
         </button>
       </div>

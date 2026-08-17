@@ -8,6 +8,45 @@
   flex-direction: column;
 }
 
+/* ── Guest preview banner ───────────────────────────────────────── */
+.pf-preview-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 11px 40px;
+  background: #1a1a2e;
+  color: #fff;
+  font-family: 'Space Mono', monospace;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.pf-preview-bar__label {
+  opacity: 0.85;
+}
+
+.pf-preview-bar__exit {
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+  font-family: 'Space Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  padding: 6px 16px;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: background 0.2s;
+  white-space: nowrap;
+}
+
+.pf-preview-bar__exit:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
 /* ── Top nav ────────────────────────────────────────────────────── */
 .pf-nav {
   display: flex;
@@ -64,7 +103,7 @@
   top: 0;
   left: 0;
   right: 0;
-  height: 340px;
+  height: 360px;
   background: linear-gradient(135deg, #c9b8f5 0%, #b8c8f7 50%, #d4e0ff 100%);
   border-radius: 0 0 32px 32px;
   pointer-events: none;
@@ -138,7 +177,8 @@
   padding-top: 120px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
+  min-width: 0;
 }
 
 .pf-hero__name-row {
@@ -200,34 +240,39 @@
   border-color: #1a1a2e;
 }
 
-/* ── Social icon bar ────────────────────────────────────────────── */
+/* ── Social icon strip (in name row, right side) ────────────────── */
 .pf-hero__socials {
   display: flex;
   align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
+  gap: 4px;
+  flex-shrink: 0;
 }
 
 .pf-social {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 34px;
-  height: 34px;
+  width: 30px;
+  height: 30px;
   border-radius: 8px;
-  background: rgba(0, 0, 0, 0.07);
-  color: rgba(0, 0, 0, 0.45);
+  background: rgba(255, 255, 255, 0.4);
+  color: rgba(0, 0, 0, 0.4);
   text-decoration: none;
-  transition: background 0.18s, color 0.18s, transform 0.15s;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  transition: background 0.18s, color 0.18s, border-color 0.18s, transform 0.15s;
+  backdrop-filter: blur(4px);
 }
 
-.pf-social:hover { transform: translateY(-2px); }
+.pf-social:hover {
+  transform: translateY(-2px);
+  border-color: rgba(0, 0, 0, 0.18);
+}
 
-.pf-social--github:hover   { background: rgba(0, 0, 0, 0.1);       color: #111; }
-.pf-social--linkedin:hover { background: rgba(0, 119, 181, 0.12);   color: #0077b5; }
-.pf-social--twitter:hover  { background: rgba(29, 161, 242, 0.12);  color: #1da1f2; }
-.pf-social--devpost:hover  { background: rgba(0, 62, 84, 0.1);      color: #003e54; }
-.pf-social--website:hover  { background: rgba(51, 255, 51, 0.12);   color: #1a9e1a; }
+.pf-social--github:hover   { background: rgba(0, 0, 0, 0.08);       color: #111; }
+.pf-social--linkedin:hover { background: rgba(0, 119, 181, 0.1);    color: #0077b5; }
+.pf-social--twitter:hover  { background: rgba(0, 0, 0, 0.08);       color: #111; }
+.pf-social--devpost:hover  { background: rgba(0, 62, 84, 0.08);     color: #003e54; }
+.pf-social--website:hover  { background: rgba(26, 158, 26, 0.08);   color: #1a9e1a; }
 
 /* ── Action buttons ─────────────────────────────────────────────── */
 .pf-hero__actions {
@@ -273,11 +318,11 @@
 
 /* ── Stats ──────────────────────────────────────────────────────── */
 .pf-hero__stats {
+  position: absolute;
+  right: 40px;
+  top: 272px; /* gradient is 360px — sits flush at the bottom */
   display: flex;
-  gap: 48px;
-  padding-top: 140px;
-  flex-shrink: 0;
-  align-self: flex-start;
+  gap: 36px;
 }
 
 .pf-stat {
@@ -534,6 +579,104 @@
   line-height: 1.7;
 }
 
+/* ── Connect card grid (About tab) ─────────────────────────────── */
+.pf-connect {
+  margin-bottom: 32px;
+}
+
+.pf-connect__heading {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(0, 0, 0, 0.35);
+  margin: 0 0 14px;
+}
+
+.pf-connect__grid {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.pf-connect__card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  width: 68px;
+  padding: 16px 0 12px;
+  background: #f4f5fb;
+  border-radius: 18px;
+  box-shadow:
+    5px 5px 12px rgba(0, 0, 0, 0.09),
+    -3px -3px 8px rgba(255, 255, 255, 0.92);
+  color: rgba(0, 0, 0, 0.3);
+  text-decoration: none;
+  transition: transform 0.18s, box-shadow 0.18s, color 0.18s;
+}
+
+.pf-connect__card:hover {
+  transform: translateY(-3px);
+  box-shadow:
+    8px 8px 16px rgba(0, 0, 0, 0.11),
+    -3px -3px 8px rgba(255, 255, 255, 0.96);
+}
+
+.pf-connect__card-name {
+  font-size: 9px;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  font-family: 'Space Mono', monospace;
+}
+
+.pf-connect__card--github:hover   { color: #111; }
+.pf-connect__card--linkedin:hover { color: #0077b5; }
+.pf-connect__card--twitter:hover  { color: #111; }
+.pf-connect__card--devpost:hover  { color: #003e54; }
+.pf-connect__card--website:hover  { color: #1a9e1a; }
+
+/* ── About Me section (above tabs) ─────────────────────────────── */
+.pf-aboutme {
+  padding: 32px 40px 0;
+  max-width: 1100px;
+  width: 100%;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+.pf-aboutme__inner {
+  padding-bottom: 28px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 680px;
+}
+
+.pf-aboutme__bio {
+  font-size: 14px;
+  color: rgba(0, 0, 0, 0.6);
+  line-height: 1.75;
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.pf-aboutme__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pf-aboutme__pill {
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.45);
+  background: rgba(0, 0, 0, 0.05);
+  padding: 4px 12px;
+  border-radius: 20px;
+  letter-spacing: 0.02em;
+}
+
 /* ── About tab ──────────────────────────────────────────────────── */
 .pf-about {
   max-width: 560px;
@@ -633,8 +776,9 @@
   }
 
   .pf-hero__stats {
-    padding-top: 0;
-    gap: 32px;
+    position: static;
+    gap: 28px;
+    margin-top: 12px;
   }
 
   .pf-grid {

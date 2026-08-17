@@ -89,9 +89,6 @@ export default function HackathonNavbar({
             Hackathons
           </button>
         )}
-        <Link to="/about" className="hackathon-nav__link">
-          About Us
-        </Link>
       </nav>
 
       <div className="hackathon-nav__actions">

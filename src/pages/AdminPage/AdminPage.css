@@ -995,6 +995,24 @@
   color: #ef4444;
 }
 
+.adm-detail__submissions {
+  width: 100%;
+  margin-top: 8px;
+  background: #facc15;
+  color: #1a0f2e;
+  border: none;
+  border-radius: 10px;
+  padding: 12px 0;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.adm-detail__submissions:hover {
+  opacity: 0.85;
+}
+
 .adm-detail__empty {
   flex: 1;
   display: flex;
@@ -1213,6 +1231,306 @@
   grid-template-columns: 1fr 1fr;
   gap: 14px;
 }
+
+/* ── Submissions page (white/light theme, full screen) ──────── */
+
+.adm-subpage {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  background: #f8fafc;
+  color: #0f172a;
+  overflow-y: auto;
+  padding: 28px 40px 60px;
+}
+
+.adm-subpage__head {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+  max-width: 880px;
+  margin: 0 auto 20px;
+}
+
+.adm-subpage__back {
+  background: none;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #475569;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.adm-subpage__back:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.adm-subpage__title {
+  font-size: 24px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 4px 0 4px;
+}
+
+.adm-subpage__count {
+  font-size: 13px;
+  color: #64748b;
+  margin: 0;
+}
+
+.adm-subpage__filters {
+  display: flex;
+  gap: 8px;
+  max-width: 880px;
+  margin: 0 auto 20px;
+}
+
+.adm-subpage__filter {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 999px;
+  padding: 7px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #64748b;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.adm-subpage__filter:hover {
+  border-color: #cbd5e1;
+}
+
+.adm-subpage__filter.is-active {
+  background: #0f172a;
+  border-color: #0f172a;
+  color: #fff;
+}
+
+.adm-subpage__list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 880px;
+  margin: 0 auto;
+}
+
+.adm-sub-empty {
+  color: #94a3b8;
+  font-size: 14px;
+  text-align: center;
+  padding: 40px 0;
+}
+
+.adm-sub-card {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  overflow: hidden;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.adm-sub-card.is-open {
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06);
+}
+
+.adm-sub-card__row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 18px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  color: #0f172a;
+}
+
+.adm-sub-card__row svg {
+  width: 16px;
+  height: 16px;
+  color: #94a3b8;
+  flex-shrink: 0;
+}
+
+.adm-sub-card__row-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.adm-sub-card__title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.adm-sub-card__team {
+  font-size: 12px;
+  font-weight: 500;
+  color: #64748b;
+}
+
+.adm-sub-card__badge {
+  flex-shrink: 0;
+  background: #dbeafe;
+  color: #1d4ed8;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border-radius: 999px;
+  padding: 3px 8px;
+}
+
+.adm-sub-card__rank {
+  flex-shrink: 0;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border-radius: 999px;
+  padding: 3px 9px;
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.adm-sub-card__rank--1st { background: #fef3c7; color: #92400e; }
+.adm-sub-card__rank--2nd { background: #e2e8f0; color: #334155; }
+.adm-sub-card__rank--3rd { background: #fed7aa; color: #9a3412; }
+
+.adm-sub-card__star {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  color: #cbd5e1;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.adm-sub-card__star:hover {
+  background: #f1f5f9;
+  color: #94a3b8;
+}
+
+.adm-sub-card__star.is-on {
+  color: #f59e0b;
+}
+
+.adm-sub-card__star.is-on:hover {
+  background: #fffbeb;
+  color: #f59e0b;
+}
+
+.adm-sub-card__star svg {
+  width: 18px;
+  height: 18px;
+  color: inherit;
+}
+
+.adm-sub-card__date {
+  flex-shrink: 0;
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.adm-sub-card__detail {
+  padding: 0 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border-top: 1px solid #f1f5f9;
+  padding-top: 14px;
+  margin: 0 18px;
+}
+
+.adm-sub-card__desc {
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: #334155;
+  margin: 0;
+}
+
+.adm-sub-card__tech {
+  font-size: 12px;
+  color: #7c3aed;
+  margin: 0;
+}
+
+.adm-sub-card__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+.adm-sub-card__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #2563eb;
+  text-decoration: none;
+}
+
+.adm-sub-card__link:hover {
+  text-decoration: underline;
+}
+
+.adm-sub-card__link svg {
+  width: 13px;
+  height: 13px;
+}
+
+.adm-sub-card__rankrow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.adm-sub-card__rankrow-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+  margin-right: 2px;
+}
+
+.adm-sub-card__rankbtn {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #64748b;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.adm-sub-card__rankbtn:hover {
+  border-color: #cbd5e1;
+}
+
+.adm-sub-card__rankbtn--1st.is-active { background: #fef3c7; border-color: #f59e0b; color: #92400e; }
+.adm-sub-card__rankbtn--2nd.is-active { background: #e2e8f0; border-color: #94a3b8; color: #334155; }
+.adm-sub-card__rankbtn--3rd.is-active { background: #fed7aa; border-color: #ea580c; color: #9a3412; }
 
 .adm-modal__row--toggles {
   grid-template-columns: auto auto;

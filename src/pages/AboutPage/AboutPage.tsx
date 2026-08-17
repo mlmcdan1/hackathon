@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import HackathonNavbar from '../../components/navigation/HackathonNavbar'
 import AuthModal from '../../components/auth/AuthModal'
 import { isSupabaseConfigured, supabase } from '../../lib/supabase'
+import { useNavScroll } from '../../hooks/useNavScroll'
 import './AboutPage.css'
 
 export default function AboutPage() {
@@ -11,7 +12,7 @@ export default function AboutPage() {
   const [userEmail, setUserEmail] = useState<string | null>(null)
   const [userName, setUserName] = useState<string | null>(null)
   const [isAdmin, setIsAdmin] = useState(false)
-  const [scrolled, setScrolled] = useState(false)
+  const { scrolled, hidden: navHidden } = useNavScroll()
 
   useEffect(() => {
     if (!supabase || !isSupabaseConfigured) return
@@ -31,17 +32,12 @@ export default function AboutPage() {
     return () => listener.subscription.unsubscribe()
   }, [])
 
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 40)
-    window.addEventListener('scroll', onScroll, { passive: true })
-    return () => window.removeEventListener('scroll', onScroll)
-  }, [])
-
   return (
     <>
       <div className="about-page">
         <HackathonNavbar
           activeSection={-1}
+          hidden={navHidden}
           scrolled={scrolled}
           links={[{ label: 'Hackathons', index: 1 }]}
           onNavigate={(i) => { if (i === 0) navigate('/'); else if (i === 1) navigate('/hackathons') }}
