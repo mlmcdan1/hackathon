@@ -176,7 +176,9 @@ function GameboysInScene({
   const [videoTextures] = useState<THREE.VideoTexture[]>(() =>
     GAMEBOY_DATA.map(() => {
       const v = document.createElement('video')
-      v.loop = true; v.muted = true; v.playsInline = true; v.preload = 'auto'
+      // 'metadata' is enough to seek to the thumbnail frame below — the full
+      // clip (18-61MB each) only needs to buffer once the user zooms in.
+      v.loop = true; v.muted = true; v.playsInline = true; v.preload = 'metadata'
       v.style.cssText = 'position:fixed;top:-1px;left:-1px;width:1px;height:1px;opacity:0;pointer-events:none'
       const tex = new THREE.VideoTexture(v)
       tex.flipY = false

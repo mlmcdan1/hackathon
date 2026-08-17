@@ -89,12 +89,6 @@ export default function HackathonNavbar({
             Hackathons
           </button>
         )}
-        <Link
-          className={`hackathon-nav__link${activeSection === -1 ? ' is-active' : ''}`}
-          to="/about"
-        >
-          About Us
-        </Link>
       </nav>
 
       <div className="hackathon-nav__actions">
