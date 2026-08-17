@@ -3895,36 +3895,15 @@ body {
   animation: gb-panel-in 0.4s 0.16s ease both;
 }
 
-.gb-info-panel__stats {
-  display: flex;
-  gap: 36px;
-  align-items: flex-end;
+.gb-info-panel__blurb {
   flex-shrink: 0;
-  padding-bottom: 4px;
-  animation: gb-panel-in 0.4s 0.22s ease both;
-}
-
-.gb-info-panel__stat {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 5px;
-}
-
-.gb-info-panel__stat-val {
-  font-family: 'Anton', sans-serif;
-  font-weight: 400;
-  font-size: clamp(36px, 4.4vw, 64px);
-  color: #fff;
-  line-height: 1;
-}
-
-.gb-info-panel__stat-lbl {
+  max-width: 360px;
+  margin: 0 0 6px;
   font-family: 'Space Mono', monospace;
-  font-size: 11px;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.4);
+  font-size: 15px;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.72);
+  animation: gb-panel-in 0.4s 0.22s ease both;
 }
 
 /* ── Screen Overlay ─────────────────────────────────────────── */

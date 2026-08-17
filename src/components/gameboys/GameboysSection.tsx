@@ -17,11 +17,9 @@ const GAMEBOY_DATA = [
     accentColor: '#33ff33',
     video: '/video/collab.mp4',
     event: {
-      title: 'Augusta Dev Hackathon I',
-      date: 'Spring 2024',
-      participants: '120+',
-      projects: '18',
-      prize: '$2,500',
+      title: 'Collab Corner',
+      cadence: 'Drop in anytime',
+      blurb: "Got an idea or need a team? Come swap project ideas and find people to build with.",
     },
   },
   {
@@ -32,11 +30,9 @@ const GAMEBOY_DATA = [
     accentColor: '#ffe600',
     video: '/video/tech.mp4',
     event: {
-      title: 'Augusta Dev Hackathon II',
-      date: 'Fall 2024',
-      participants: '180+',
-      projects: '24',
-      prize: '$5,000',
+      title: 'Tech Talk Augusta',
+      cadence: '1st Tuesday · Monthly',
+      blurb: "Short talks, demos, and time to meet other local builders. Everyone's welcome.",
     },
   },
   {
@@ -47,11 +43,9 @@ const GAMEBOY_DATA = [
     accentColor: '#ff4444',
     video: '/video/drone.mp4',
     event: {
-      title: 'Augusta Dev Hackathon III',
-      date: 'Spring 2025',
-      participants: '250+',
-      projects: '32',
-      prize: '$10,000',
+      title: 'Drone & Hardware Meetup',
+      cadence: 'Ongoing',
+      blurb: 'Into drones, robotics, or hardware hacking? Come meet others who are into it too.',
     },
   },
 ]
@@ -682,23 +676,10 @@ export default function GameboysSection() {
           {zoomReady && zoomedData && (
             <div className="gb-info-panel">
               <div className="gb-info-panel__meta">
-                <p className="gb-info-panel__date">{zoomedData.event.date}</p>
+                <p className="gb-info-panel__date">{zoomedData.event.cadence}</p>
                 <h3 className="gb-info-panel__title">{zoomedData.event.title}</h3>
               </div>
-              <div className="gb-info-panel__stats">
-                <div className="gb-info-panel__stat">
-                  <span className="gb-info-panel__stat-val">{zoomedData.event.participants}</span>
-                  <span className="gb-info-panel__stat-lbl">devs</span>
-                </div>
-                <div className="gb-info-panel__stat">
-                  <span className="gb-info-panel__stat-val">{zoomedData.event.projects}</span>
-                  <span className="gb-info-panel__stat-lbl">built</span>
-                </div>
-                <div className="gb-info-panel__stat">
-                  <span className="gb-info-panel__stat-val">{zoomedData.event.prize}</span>
-                  <span className="gb-info-panel__stat-lbl">prize pool</span>
-                </div>
-              </div>
+              <p className="gb-info-panel__blurb">{zoomedData.event.blurb}</p>
             </div>
           )}
         </div>
