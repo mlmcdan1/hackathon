@@ -48,11 +48,6 @@ function ProtectedAdminRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>
 }
 
-// Always start at top on refresh
-if (typeof window !== 'undefined') {
-  window.history.scrollRestoration = 'manual'
-}
-
 const SOUND_ROUTE_PREFIXES = ['/', '/hackathons', '/about']
 
 function useButtonHoverSound(enabled: boolean) {

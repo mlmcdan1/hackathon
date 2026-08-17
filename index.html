@@ -5,6 +5,13 @@
     <link rel="icon" type="image/png" href="/src/assets/ComputerIcon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Augusta Hackathon</title>
+    <script>
+      // Must run synchronously, before the deferred module bundle, so it
+      // wins the race against the browser's own scroll-position restore
+      // on reload — the App.tsx equivalent runs too late to reliably do this.
+      if ('scrollRestoration' in history) { history.scrollRestoration = 'manual' }
+      window.scrollTo(0, 0)
+    </script>
   </head>
   <body>
     <div id="root"></div>
