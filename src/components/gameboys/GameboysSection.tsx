@@ -17,9 +17,9 @@ const GAMEBOY_DATA = [
     accentColor: '#33ff33',
     video: '/video/collab.mp4',
     event: {
-      title: 'Collab Corner',
+      title: 'Peer Connection',
       cadence: 'Drop in anytime',
-      blurb: "Got an idea or need a team? Come swap project ideas and find people to build with.",
+      blurb: 'Connect with others in the field, swap project ideas, and find people to build with.',
     },
   },
   {
