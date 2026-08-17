@@ -6,9 +6,6 @@ import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { isSupabaseConfigured, supabase } from '../../lib/supabase'
 import HackathonNavbar from '../../components/navigation/HackathonNavbar'
-import GameboysSection from '../../components/gameboys/GameboysSection'
-import GlitchySection from '../../components/glitchy/GlitchySection'
-import ExploreSection from '../../components/explore/ExploreSection'
 import AuthModal from '../../components/auth/AuthModal'
 import RetroLoadingScreen from '../../components/hero/RetroLoadingScreen'
 import './HackathonPage.css'
@@ -17,6 +14,12 @@ gsap.registerPlugin(ScrollTrigger)
 
 const HeroCanvas = lazy(() => import('../../components/hero/HeroCanvas'))
 const FogCanvas = lazy(() => import('../../components/hero/FogCanvas'))
+// Code-split + idle-deferred: each of these preloads its own GLB models at
+// module scope, so eagerly importing them competes with the hero's own 3D
+// assets for bandwidth and WebGL contexts on initial page load.
+const GameboysSection = lazy(() => import('../../components/gameboys/GameboysSection'))
+const GlitchySection = lazy(() => import('../../components/glitchy/GlitchySection'))
+const ExploreSection = lazy(() => import('../../components/explore/ExploreSection'))
 
 
 function shouldUseLightEffects() {
@@ -396,13 +399,21 @@ export default function Homepage() {
 
       {/* ── Section 3: Explore Hackathons ── */}
       <section className="hp-explore">
-        <ExploreSection onExplore={() => navigate('/hackathons')} />
+        {(enhanceHero || useLightEffects) && (
+          <Suspense fallback={null}>
+            <ExploreSection onExplore={() => navigate('/hackathons')} />
+          </Suspense>
+        )}
       </section>
 
       {/* ── Retro world sections ── */}
       <div id="hp-world" className="hp-world">
-        <GameboysSection />
-        <GlitchySection />
+        {(enhanceHero || useLightEffects) && (
+          <Suspense fallback={null}>
+            <GameboysSection />
+            <GlitchySection />
+          </Suspense>
+        )}
 
         {/* Stats bar — MORTAL KOMBAT — hidden, not deleted */}
         {false && (
