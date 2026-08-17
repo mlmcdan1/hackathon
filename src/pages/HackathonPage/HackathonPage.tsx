@@ -27,10 +27,12 @@ function shouldUseLightEffects() {
   const nav = navigator as Navigator & { deviceMemory?: number }
   const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
   const coarsePointer = window.matchMedia('(pointer: coarse)').matches
-  const compactViewport = window.innerWidth < 1100
   const lowCpu = (navigator.hardwareConcurrency ?? 8) <= 4
   const lowMemory = (nav.deviceMemory ?? 8) <= 4
-  return prefersReducedMotion || coarsePointer || compactViewport || lowCpu || lowMemory
+  // Note: a narrow *window* is not the same signal as a small *device* — a
+  // desktop browser that just isn't maximized would otherwise get downgraded
+  // for no reason. `coarsePointer` (touch) is the real mobile/tablet signal.
+  return prefersReducedMotion || coarsePointer || lowCpu || lowMemory
 }
 
 
