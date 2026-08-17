@@ -1,6 +1,6 @@
 import { MapPin, Trophy, Users, X } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 
 let _hoverSnd: HTMLAudioElement | null = null
 function playHoverSound() {
@@ -52,7 +52,6 @@ interface Props {
 }
 
 export default function HackathonSection({ userEmail, userName, userId = null, isAdmin = false, onSignIn, onSignOut, onNavigateHome, onRegister, onSubmitProject, refreshKey = 0 }: Props) {
-  const navigate = useNavigate()
   const { scrolled, hidden } = useNavScroll()
   const [format, setFormat]       = useState<Format>('All')
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('All')

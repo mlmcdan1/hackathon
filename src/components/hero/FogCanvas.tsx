@@ -187,7 +187,11 @@ export default function FogCanvas({ overlay = false, fogOpacity = 1 }: FogCanvas
         visible = entry.isIntersecting
         if (visible && !wasVisible && !disposed) animate()
       },
-      { threshold: 0 }
+      // Shrink the effective viewport so the fog shader stops rendering once
+      // the hero is mostly scrolled past, rather than waiting until it's
+      // fully off-screen — avoids it still burning GPU time during the
+      // scroll transition into the next section.
+      { threshold: 0, rootMargin: '-20% 0px -20% 0px' }
     )
     io.observe(container)
 

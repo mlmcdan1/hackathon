@@ -567,7 +567,11 @@ export default function HeroCanvas({ onReady }: HeroCanvasProps) {
       },
       {
         threshold: 0.08,
-        rootMargin: '160px 0px',
+        // Shrink the effective viewport so rendering (and the overlay video)
+        // stops as soon as the hero is mostly scrolled away, instead of
+        // lingering 160px past the fold and colliding with the next
+        // section's own animations/video during the scroll transition.
+        rootMargin: '-20% 0px -20% 0px',
       },
     )
 
