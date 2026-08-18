@@ -44,7 +44,7 @@ const GAMEBOY_DATA = [
     video: '/video/drone.mp4',
     event: {
       title: 'Shared Interests',
-      cadence: 'Whenever',
+      cadence: '',
       blurb: 'Into drones, robotics, or something else? Connect with peers who share your interest.',
     },
   },
@@ -676,7 +676,9 @@ export default function GameboysSection() {
           {zoomReady && zoomedData && (
             <div className="gb-info-panel">
               <div className="gb-info-panel__meta">
-                <p className="gb-info-panel__date">{zoomedData.event.cadence}</p>
+                {zoomedData.event.cadence && (
+                  <p className="gb-info-panel__date">{zoomedData.event.cadence}</p>
+                )}
                 <h3 className="gb-info-panel__title">{zoomedData.event.title}</h3>
               </div>
               <p className="gb-info-panel__blurb">{zoomedData.event.blurb}</p>
