@@ -43,9 +43,9 @@ const GAMEBOY_DATA = [
     accentColor: '#ff4444',
     video: '/video/drone.mp4',
     event: {
-      title: 'Drone & Hardware Meetup',
-      cadence: 'Ongoing',
-      blurb: 'Into drones, robotics, or hardware hacking? Come meet others who are into it too.',
+      title: 'Shared Interests',
+      cadence: 'Whenever',
+      blurb: 'Into drones, robotics, or something else? Connect with peers who share your interest.',
     },
   },
 ]
