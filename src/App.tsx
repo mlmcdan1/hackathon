@@ -1,52 +1,12 @@
-import { lazy, Suspense, useEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useRef } from 'react'
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
-import { supabase } from './lib/supabase'
-import type { Session } from '@supabase/supabase-js'
 import HackathonPage from './pages/HackathonPage/HackathonPage'
 import HackathonSectionPage from './pages/HackathonSectionPage/HackathonSectionPage'
-import ChatWidget from './components/chat/ChatWidget'
+import SiteFooter from './components/footer/SiteFooter'
 const hoverSoundSrc = '/ButtonHoverSound.wav'
 
-const Profile = lazy(() => import('./pages/Profile/Profile'))
-const AdminPage = lazy(() => import('./pages/AdminPage/AdminPage'))
 const AboutPage = lazy(() => import('./pages/AboutPage/AboutPage'))
-const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage/ResetPasswordPage'))
 const HackathonDetailPage = lazy(() => import('./pages/HackathonDetailPage/HackathonDetailPage'))
-
-function ProtectedAdminRoute({ children }: { children: React.ReactNode }) {
-  const [session, setSession]   = useState<Session | null | undefined>(undefined)
-  const [isAdmin, setIsAdmin]   = useState<boolean | null>(null)
-
-  async function resolveAdmin(s: Session | null) {
-    if (!s || !supabase) { setIsAdmin(false); return }
-    if (s.user.email === import.meta.env.VITE_ADMIN_EMAIL) { setIsAdmin(true); return }
-    if (s.user.app_metadata?.role === 'admin' || s.user.user_metadata?.role === 'admin') { setIsAdmin(true); return }
-    const { data } = await supabase.from('admins').select('id').eq('user_id', s.user.id).maybeSingle()
-    setIsAdmin(!!data)
-  }
-
-  useEffect(() => {
-    if (!supabase) { setSession(null); setIsAdmin(false); return }
-    supabase.auth.getSession().then(({ data }) => {
-      const s = data.session ?? null
-      setSession(s)
-      resolveAdmin(s)
-    })
-    const { data: listener } = supabase.auth.onAuthStateChange((_e, s) => {
-      setSession(s ?? null)
-      resolveAdmin(s ?? null)
-    })
-    return () => listener.subscription.unsubscribe()
-  }, [])
-
-  if (session === undefined || isAdmin === null) {
-    return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: '#05030a' }}><div className="adm-loading__spinner" /></div>
-  }
-
-  if (!session || !isAdmin) return <Navigate to="/" replace />
-
-  return <>{children}</>
-}
 
 const SOUND_ROUTE_PREFIXES = ['/', '/hackathons', '/about']
 
@@ -84,25 +44,14 @@ export default function App() {
 
   return (
     <>
-    <Routes>
-      <Route path="/" element={<HackathonPage />} />
-      <Route path="/hackathons" element={<HackathonSectionPage />} />
-      <Route path="/hackathons/:id" element={<Suspense fallback={null}><HackathonDetailPage /></Suspense>} />
-      <Route path="/about" element={<Suspense fallback={null}><AboutPage /></Suspense>} />
-      <Route path="/reset-password" element={<Suspense fallback={null}><ResetPasswordPage /></Suspense>} />
-      <Route path="/profile" element={<Suspense fallback={null}><Profile /></Suspense>} />
-      <Route
-        path="/admin"
-        element={
-          <ProtectedAdminRoute>
-            <Suspense fallback={null}><AdminPage /></Suspense>
-          </ProtectedAdminRoute>
-        }
-      />
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
-
-    <ChatWidget />
+      <Routes>
+        <Route path="/" element={<HackathonPage />} />
+        <Route path="/hackathons" element={<HackathonSectionPage />} />
+        <Route path="/hackathons/:id" element={<Suspense fallback={null}><HackathonDetailPage /></Suspense>} />
+        <Route path="/about" element={<Suspense fallback={null}><AboutPage /></Suspense>} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+      <SiteFooter />
     </>
   )
 }

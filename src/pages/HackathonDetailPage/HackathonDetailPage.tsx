@@ -1,28 +1,15 @@
 import { useEffect, useState } from 'react'
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
-import { ArrowLeft, Bell, BellOff, Calendar, Clock, MapPin, Trophy, Users } from 'lucide-react'
+import { useNavigate, useParams } from 'react-router-dom'
+import { ArrowLeft, Calendar, Clock, MapPin, Trophy, Users } from 'lucide-react'
 import placeholderImage from '../../assets/placeholderImage.png'
 import {
   computeStatus,
   fetchPublicEvents,
-  fetchReminderSubscribed,
   publicStatusLabel,
-  toggleReminder,
   type EventRecord,
 } from '../../lib/eventUtils'
-import {
-  claimGuestRegistrations,
-  fetchRegistration,
-  fetchSubmission,
-  type Registration,
-  type ProjectSubmission,
-} from '../../lib/registrationUtils'
-import { isSupabaseConfigured, supabase } from '../../lib/supabase'
 import { useNavScroll } from '../../hooks/useNavScroll'
 import HackathonNavbar from '../../components/navigation/HackathonNavbar'
-import AuthModal from '../../components/auth/AuthModal'
-import RegistrationModal from '../../components/registration/RegistrationModal'
-import ProjectSubmissionModal from '../../components/registration/ProjectSubmissionModal'
 import './HackathonDetailPage.css'
 
 // ── Color maps (match HackathonSection) ───────────────────────────
@@ -120,29 +107,11 @@ function DetailSkeleton() {
 export default function HackathonDetailPage() {
   const { id }   = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
 
   const [event,    setEvent]    = useState<EventRecord | null>(null)
   const [loading,  setLoading]  = useState(true)
   const [notFound, setNotFound] = useState(false)
   const { scrolled, hidden: navHidden } = useNavScroll()
-
-  const [showAuthModal,         setShowAuthModal]         = useState(false)
-  const [showRegModal,          setShowRegModal]          = useState(() => searchParams.get('register') === 'true')
-  const [showSubModal,          setShowSubModal]          = useState(false)
-
-  const [userEmail, setUserEmail] = useState<string | null>(null)
-  const [userName,  setUserName]  = useState<string | null>(null)
-  const [userId,    setUserId]    = useState<string | null>(null)
-  const [isAdmin,   setIsAdmin]   = useState(false)
-
-  const [registration,  setRegistration]  = useState<Registration | null>(null)
-  const [submission,    setSubmission]    = useState<ProjectSubmission | null>(null)
-  const [regLoading,    setRegLoading]    = useState(true)
-
-  const [reminded,      setReminded]      = useState(false)
-  const [reminderLoading, setReminderLoading] = useState(false)
-
 
   // Load event (instant from cache if coming from list page)
   useEffect(() => {
@@ -153,48 +122,6 @@ export default function HackathonDetailPage() {
       setLoading(false)
     })
   }, [id])
-
-  // Auth
-  useEffect(() => {
-    if (!supabase || !isSupabaseConfigured) return
-    const resolve = (s: import('@supabase/supabase-js').Session | null) => {
-      setUserEmail(s?.user.email ?? null)
-      setUserName(s?.user.user_metadata?.first_name ?? null)
-      setUserId(s?.user.id ?? null)
-      setIsAdmin(
-        s?.user.app_metadata?.role === 'admin' ||
-        s?.user.user_metadata?.role  === 'admin'
-      )
-    }
-    supabase.auth.getSession().then(({ data }) => resolve(data.session ?? null))
-    const { data: listener } = supabase.auth.onAuthStateChange((_e, s) => resolve(s ?? null))
-    return () => listener.subscription.unsubscribe()
-  }, [])
-
-  // Load registration, submission, and reminder state when userId is known
-  useEffect(() => {
-    if (!userId || !id) { setRegLoading(false); return }
-    setRegLoading(true)
-    claimGuestRegistrations().then(() => Promise.all([
-      fetchRegistration(id, userId),
-      fetchSubmission(id, userId),
-      fetchReminderSubscribed(id, userId),
-    ])).then(([reg, sub, rem]) => {
-      setRegistration(reg)
-      setSubmission(sub)
-      setReminded(rem)
-      setRegLoading(false)
-    })
-  }, [userId, id])
-
-  const handleReminderToggle = async () => {
-    if (!userId || !id) { setShowAuthModal(true); return }
-    const next = !reminded
-    setReminded(next)
-    setReminderLoading(true)
-    await toggleReminder(id, userId, next)
-    setReminderLoading(false)
-  }
 
   if (loading) return <DetailSkeleton />
 
@@ -211,7 +138,6 @@ export default function HackathonDetailPage() {
   const statusLabel = publicStatusLabel(status)
   const isOpen      = status === 'open-reg'
   const isActive    = status === 'active'
-  const isCompleted = status === 'completed'
   const colorHex    = COLOR_HEX[event.color] ?? '#c084fc'
   const colorRgb    = COLOR_RGB[event.color] ?? '192, 132, 252'
 
@@ -237,26 +163,14 @@ export default function HackathonDetailPage() {
 
   const pageStyle = { '--hdp-color': colorHex, '--hdp-rgb': colorRgb } as React.CSSProperties
 
-  // ── CTA logic ─────────────────────────────────────────────────────
-  // What to show in the sidebar CTA depends on auth + registration + event phase
-
-  const canSubmitProject = (isActive || isCompleted) && !!registration && !!userId
-
   return (
-    <>
-      <div className="hdp" style={pageStyle}>
-        <HackathonNavbar
-          activeSection={1}
-          hidden={navHidden}
-          scrolled={scrolled}
-          links={[{ label: 'Hackathons', index: 1 }]}
-          onNavigate={(i) => { if (i === 0) navigate('/'); else if (i === 1) navigate('/hackathons') }}
-          userEmail={userEmail}
-          userName={userName}
-          isAdmin={isAdmin}
-          onSignIn={() => setShowAuthModal(true)}
-          onSignOut={() => void supabase?.auth.signOut()}
-        />
+    <div className="hdp" style={pageStyle}>
+      <HackathonNavbar
+        activePath="/hackathons"
+        hidden={navHidden}
+        scrolled={scrolled}
+        onNavigate={(path) => navigate(path)}
+      />
 
         {/* ── Hero ── */}
         <div className="hdp-hero">
@@ -392,135 +306,8 @@ export default function HackathonDetailPage() {
               </ul>
             </div>
 
-            {/* ── CTA card ── */}
-            <div className="hdp-card hdp-card--cta">
-              {regLoading ? (
-                <div className="hdp-skel" style={{ height: 44, borderRadius: 10 }} />
-              ) : !registration ? (
-                /* Not registered — always show a clickable register button */
-                <button
-                  type="button"
-                  className={`hdp-register${!isOpen && !isActive ? ' hdp-register--disabled' : ''}`}
-                  onClick={() => setShowRegModal(true)}
-                >
-                  {isCompleted ? 'Event Ended' : !isOpen && !isActive ? 'Registration Not Open Yet' : 'Register Now'}
-                </button>
-              ) : registration && !canSubmitProject ? (
-                /* Registered, event hasn't started yet */
-                <>
-                  <div className="hdp-registered-state">
-                    <span className="hdp-registered-state__check">✓</span>
-                    <span className="hdp-registered-state__text">You&apos;re Registered</span>
-                  </div>
-                  {registration.teamName && (
-                    <p className="hdp-cta-hint">Team: {registration.teamName}</p>
-                  )}
-                  <button
-                    type="button"
-                    className="hdp-edit-link"
-                    onClick={() => setShowRegModal(true)}
-                  >
-                    Edit Registration
-                  </button>
-                </>
-              ) : registration && canSubmitProject && !submission ? (
-                /* Registered, event active or ended, no submission yet */
-                <>
-                  <div className="hdp-registered-state hdp-registered-state--sm">
-                    <span className="hdp-registered-state__check">✓</span>
-                    <span className="hdp-registered-state__text">You&apos;re Registered</span>
-                  </div>
-                  <button
-                    type="button"
-                    className="hdp-register hdp-register--submit"
-                    onClick={() => setShowSubModal(true)}
-                  >
-                    {isCompleted ? 'Submit Your Project' : 'Submit Project Now'}
-                  </button>
-                  {isActive && (
-                    <p className="hdp-cta-hint">
-                      Submissions close when the event ends.
-                    </p>
-                  )}
-                </>
-              ) : submission ? (
-                /* Project submitted */
-                <>
-                  <div className="hdp-registered-state">
-                    <span className="hdp-registered-state__check">✓</span>
-                    <span className="hdp-registered-state__text">Project Submitted</span>
-                  </div>
-                  <p className="hdp-cta-hint" style={{ marginTop: '0.5rem' }}>
-                    {submission.projectTitle}
-                  </p>
-                  <button
-                    type="button"
-                    className="hdp-edit-link"
-                    onClick={() => setShowSubModal(true)}
-                  >
-                    Edit Submission
-                  </button>
-                </>
-              ) : null}
-            </div>
-
-            {/* ── Reminder toggle (logged-in, event not completed) ── */}
-            {userEmail && !isCompleted && (
-              <div className="hdp-card hdp-card--reminder">
-                <button
-                  type="button"
-                  className={`hdp-remind-btn${reminded ? ' hdp-remind-btn--on' : ''}`}
-                  onClick={handleReminderToggle}
-                  disabled={reminderLoading}
-                >
-                  {reminded
-                    ? <><BellOff size={14} /> Reminders On</>
-                    : <><Bell size={14} /> Remind Me</>
-                  }
-                </button>
-                {reminded && (
-                  <p className="hdp-remind-hint">
-                    We&apos;ll email you 1 week out, 3 days out, and the morning of the event.
-                  </p>
-                )}
-              </div>
-            )}
-
           </aside>
         </div>
       </div>
-
-      {/* Modals */}
-      {showAuthModal && (
-        <AuthModal onClose={() => setShowAuthModal(false)} />
-      )}
-
-      {showRegModal && (
-        <RegistrationModal
-          eventId={id!}
-          eventTitle={event.title}
-          colorHex={colorHex}
-          colorRgb={colorRgb}
-          userId={userId}
-          userEmail={userEmail}
-          existing={registration}
-          onClose={() => setShowRegModal(false)}
-          onSaved={(reg) => { setRegistration(reg); setShowRegModal(false) }}
-        />
-      )}
-
-      {showSubModal && userId && (
-        <ProjectSubmissionModal
-          eventId={id!}
-          eventTitle={event.title}
-          colorHex={colorHex}
-          colorRgb={colorRgb}
-          userId={userId}
-          existing={submission}
-          onClose={() => setShowSubModal(false)}
-          onSaved={(sub) => { setSubmission(sub); setShowSubModal(false) }}
-        />
-      )}
-    </>
   )
 }
