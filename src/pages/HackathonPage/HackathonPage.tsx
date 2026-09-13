@@ -4,21 +4,18 @@ import { useNavigate } from 'react-router-dom'
 import Lenis from 'lenis'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
-import { isSupabaseConfigured, supabase } from '../../lib/supabase'
 import HackathonNavbar from '../../components/navigation/HackathonNavbar'
-import AuthModal from '../../components/auth/AuthModal'
 import RetroLoadingScreen from '../../components/hero/RetroLoadingScreen'
+import ScrollTubeBackground from '../../components/background/ScrollTubeBackground'
 import './HackathonPage.css'
 
 gsap.registerPlugin(ScrollTrigger)
 
 const HeroCanvas = lazy(() => import('../../components/hero/HeroCanvas'))
-const FogCanvas = lazy(() => import('../../components/hero/FogCanvas'))
 // Code-split + idle-deferred: each of these preloads its own GLB models at
 // module scope, so eagerly importing them competes with the hero's own 3D
 // assets for bandwidth and WebGL contexts on initial page load.
-const GameboysSection = lazy(() => import('../../components/gameboys/GameboysSection'))
-const GlitchySection = lazy(() => import('../../components/glitchy/GlitchySection'))
+const PhasesSection = lazy(() => import('../../components/phases/PhasesSection'))
 const ExploreSection = lazy(() => import('../../components/explore/ExploreSection'))
 
 
@@ -99,10 +96,8 @@ export default function Homepage() {
   const navigate = useNavigate()
   const [useLightEffects] = useState(() => shouldUseLightEffects())
   const [enhanceHero, setEnhanceHero] = useState(false)
-  const [showAuthModal, setShowAuthModal] = useState(false)
-  const [userEmail, setUserEmail] = useState<string | null>(null)
-  const [userName, setUserName] = useState<string | null>(null)
-  const [isAdmin, setIsAdmin] = useState(false)
+  const [heroInView, setHeroInView] = useState(true)
+  const heroWrapRef = useRef<HTMLDivElement>(null)
   const [loadingMounted, setLoadingMounted] = useState(() => !useLightEffects)
   const [loadingVisible, setLoadingVisible] = useState(true)
   const [loadingProgress, setLoadingProgress] = useState(0)
@@ -143,30 +138,6 @@ export default function Homepage() {
     }
   }, [])
 
-  async function resolveAdmin(session: import('@supabase/supabase-js').Session | null) {
-    if (!session || !supabase) { setIsAdmin(false); return }
-    if (session.user.email === import.meta.env.VITE_ADMIN_EMAIL) { setIsAdmin(true); return }
-    if (session.user.app_metadata?.role === 'admin' || session.user.user_metadata?.role === 'admin') { setIsAdmin(true); return }
-    const { data } = await supabase.from('admins').select('id').eq('user_id', session.user.id).maybeSingle()
-    setIsAdmin(!!data)
-  }
-
-  // Auth
-  useEffect(() => {
-    if (!supabase || !isSupabaseConfigured) return
-    supabase.auth.getSession().then(({ data }) => {
-      setUserEmail(data.session?.user.email ?? null)
-      setUserName(data.session?.user.user_metadata?.first_name ?? null)
-      resolveAdmin(data.session ?? null)
-    })
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUserEmail(session?.user.email ?? null)
-      setUserName(session?.user.user_metadata?.first_name ?? null)
-      resolveAdmin(session ?? null)
-    })
-    return () => listener.subscription.unsubscribe()
-  }, [])
-
   // Loading bar fill
   useEffect(() => {
     if (useLightEffects) return
@@ -203,7 +174,21 @@ export default function Homepage() {
     }
   }, [useLightEffects])
 
-
+  // Only keep the hero WebGL canvas mounted while it's near the viewport. It
+  // used to stay alive for the entire session once mounted — that background
+  // GPU load (plus explore/gameboys/etc mounting on top of it further down)
+  // was what pushed the GPU into "Context Lost" crashes further down the page.
+  // Generous rootMargin avoids popping in/out right at the edge.
+  useEffect(() => {
+    const el = heroWrapRef.current
+    if (!el) return
+    const io = new IntersectionObserver(
+      ([entry]) => setHeroInView(entry.isIntersecting),
+      { rootMargin: '100% 0px' }
+    )
+    io.observe(el)
+    return () => io.disconnect()
+  }, [])
 
 
 
@@ -328,27 +313,18 @@ export default function Homepage() {
   return (
     <div className={`homepage hp-scrollable${!loadingMounted ? ' hackathon-page--hero-ready' : ''}`}>
       <HackathonNavbar
-        activeSection={0}
+        activePath="/"
         hidden={navHidden}
         scrolled={navScrolled}
-        links={[{ label: 'Overview', index: 0 }, { label: 'Hackathons', index: 1 }]}
-        onNavigate={(i) => { if (i === 1) navigate('/hackathons') }}
-        userEmail={userEmail}
-        userName={userName}
-        isAdmin={isAdmin}
-        onSignIn={() => setShowAuthModal(true)}
-        onSignOut={() => void supabase?.auth.signOut()}
+        onNavigate={(path) => navigate(path)}
       />
 
       {/* ── Hero sticky scroll space ── */}
       {/* ── Hero — full viewport, TV model, no zoom ── */}
-      <div className="hp-hero">
-        {!useLightEffects && enhanceHero && (
-          <Suspense fallback={null}><FogCanvas /></Suspense>
-        )}
+      <div className="hp-hero" ref={heroWrapRef}>
         <div className="hero-atmosphere hero-atmosphere--back" aria-hidden="true" />
         <div className="canvas-container">
-          {useLightEffects || !enhanceHero ? (
+          {useLightEffects || !enhanceHero || !heroInView ? (
             <div aria-hidden="true" style={{ width: '100%', height: '100%', background: 'radial-gradient(circle at 50% 40%, rgba(255, 213, 125, 0.18), rgba(17, 13, 32, 0.92) 55%, #05030a 100%)' }} />
           ) : (
             <Suspense fallback={<div aria-hidden="true" style={{ width: '100%', height: '100%', background: 'radial-gradient(circle at 50% 40%, rgba(255, 213, 125, 0.18), rgba(17, 13, 32, 0.92) 55%, #05030a 100%)' }} />}>
@@ -368,9 +344,6 @@ export default function Homepage() {
           </button>
         </div>
         <div className="hero-atmosphere hero-atmosphere--front" aria-hidden="true" />
-        {!useLightEffects && enhanceHero && (
-          <Suspense fallback={null}><FogCanvas overlay fogOpacity={0.45} /></Suspense>
-        )}
         <div className="hp-scroll-hint" aria-hidden="true">
           <span>Scroll to explore</span>
           <div className="hp-scroll-hint__arrow" />
@@ -378,9 +351,22 @@ export default function Homepage() {
       </div>
 
 
-      {/* ── Explore section ── */}
-      {/* ── Section 2: Intro — large right photo, text bleeds over it from left ── */}
-      <section className="hp-intro">
+      {/* ── Everything after the hero shares one continuous background
+          "tube" (see ScrollTubeBackground) — a single canvas sitting behind
+          the intro video, the explore cards, and the phases models, whose
+          shapes reveal top-to-bottom as this whole zone scrolls through
+          view (GSAP ScrollTrigger scrub — the same mechanism already
+          driving every other scroll effect on this page). `isolate` (see
+          CSS) scopes the canvas's negative z-index to just this wrapper,
+          so it can't sink behind the hero above it or the footer below;
+          `overflow: hidden` clips the canvas's fixed, generously-tall
+          backing height down to whatever this zone's real content height
+          turns out to be — no JS measurement of that height required. ── */}
+      <div className="hp-scroll-tube-zone">
+        <ScrollTubeBackground />
+
+        {/* ── Section 2: Intro — large right photo, text bleeds over it from left ── */}
+        <section className="hp-intro">
         <div className="hp-intro__img-frame" aria-hidden="true">
           <video
             className="hp-intro__img"
@@ -408,12 +394,11 @@ export default function Homepage() {
         )}
       </section>
 
-      {/* ── Retro world sections ── */}
+      {/* ── Hackathon phases (Build / Network / Pitch) ── */}
       <div id="hp-world" className="hp-world">
         {(enhanceHero || useLightEffects) && (
           <Suspense fallback={null}>
-            <GameboysSection />
-            <GlitchySection />
+            <PhasesSection />
           </Suspense>
         )}
 
@@ -442,6 +427,7 @@ export default function Homepage() {
           </div>
         </section>
         )}
+      </div>
 
 
 
@@ -450,7 +436,6 @@ export default function Homepage() {
       </div>
 
 
-      {showAuthModal && <AuthModal onClose={() => setShowAuthModal(false)} />}
       {loadingMounted && <RetroLoadingScreen progress={loadingProgress} visible={loadingVisible} />}
     </div>
   )

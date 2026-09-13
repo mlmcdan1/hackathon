@@ -1,61 +1,32 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+
+const NAV_ITEMS = [
+  { label: 'Home', path: '/' },
+  { label: 'Hackathons', path: '/hackathons' },
+  { label: 'About', path: '/about' },
+]
 
 interface HackathonNavbarProps {
-  activeSection: number
   hidden?: boolean
   scrolled?: boolean
-  links: Array<{
-    label: string
-    index: number
-  }>
-  onNavigate: (sectionIndex: number) => void
-  userEmail: string | null
-  userName?: string | null
-  isAdmin?: boolean
-  onSignIn: () => void
-  onSignOut: () => void
-}
-
-function formatDisplayName(userEmail: string | null) {
-  if (!userEmail) return ''
-
-  const localPart = userEmail.split('@')[0] ?? ''
-  return localPart
-    .replace(/[._-]+/g, ' ')
-    .trim()
-    .split(' ')
-    .filter(Boolean)
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(' ')
+  activePath: string
+  onNavigate: (path: string) => void
 }
 
 export default function HackathonNavbar({
-  activeSection,
   hidden = false,
   scrolled = false,
-  links,
+  activePath,
   onNavigate,
-  userEmail,
-  userName,
-  isAdmin = false,
-  onSignIn,
-  onSignOut,
 }: HackathonNavbarProps) {
-  const displayName = userName?.trim() || formatDisplayName(userEmail)
-  const registerLink = links.find((link) => link.index === 1)
   const [menuOpen, setMenuOpen] = useState(false)
-  const menuRef = useRef<HTMLDivElement>(null)
+  const triggerRef = useRef<HTMLButtonElement>(null)
 
   useEffect(() => {
     if (!menuOpen) return
-    const onPointerDown = (e: PointerEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setMenuOpen(false)
-      }
-    }
-    document.addEventListener('pointerdown', onPointerDown)
-    return () => document.removeEventListener('pointerdown', onPointerDown)
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setMenuOpen(false) }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
   }, [menuOpen])
 
   const navClass = [
@@ -64,81 +35,79 @@ export default function HackathonNavbar({
     scrolled ? 'hackathon-nav--scrolled' : '',
   ].filter(Boolean).join(' ')
 
-  return (
-    <header className={navClass}>
-      <div className="hackathon-nav__brand-group">
-        <button type="button" className="hackathon-nav__brand" onClick={() => onNavigate(0)}>
-          Hackathon
-        </button>
-      </div>
+  const handleSelect = (path: string) => {
+    setMenuOpen(false)
+    onNavigate(path)
+  }
 
-      <nav className="hackathon-nav__links" aria-label="Hackathon navigation">
-        <button
-          type="button"
-          className={`hackathon-nav__link${activeSection === 0 ? ' is-active' : ''}`}
-          onClick={() => onNavigate(0)}
-        >
-          Home
+  return (
+    <>
+      <header className={navClass}>
+        <button type="button" className="hackathon-nav__brand" onClick={() => handleSelect('/')}>
+          Augusta Hackathon
         </button>
-        {registerLink && (
+
+        <button
+          ref={triggerRef}
+          type="button"
+          className="hackathon-nav__menu-trigger"
+          onClick={() => setMenuOpen(true)}
+          aria-haspopup="dialog"
+          aria-expanded={menuOpen}
+          aria-controls="hackathon-nav-panel"
+        >
+          <span className="hackathon-nav__menu-bars" aria-hidden="true">
+            <span /><span /><span />
+          </span>
+          MENU
+        </button>
+      </header>
+
+      <div
+        className={`hackathon-nav__backdrop${menuOpen ? ' is-open' : ''}`}
+        onClick={() => setMenuOpen(false)}
+        aria-hidden="true"
+      />
+
+      <aside
+        id="hackathon-nav-panel"
+        className={`hackathon-nav__panel${menuOpen ? ' is-open' : ''}`}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Site menu"
+      >
+        <div className="hackathon-nav__panel-head">
           <button
             type="button"
-            className={`hackathon-nav__link${activeSection === registerLink.index ? ' is-active' : ''}`}
-            onClick={() => onNavigate(registerLink.index)}
+            className="hackathon-nav__panel-close"
+            onClick={() => setMenuOpen(false)}
+            aria-label="Close menu"
           >
-            Hackathons
+            <svg width="34" height="34" viewBox="0 0 40 40" aria-hidden="true">
+              <polygon points="12,4 28,4 38,20 28,36 12,36 2,20" fill="none" stroke="currentColor" strokeWidth="1.5" />
+              <line x1="15" y1="15" x2="25" y2="25" stroke="currentColor" strokeWidth="1.5" />
+              <line x1="25" y1="15" x2="15" y2="25" stroke="currentColor" strokeWidth="1.5" />
+            </svg>
           </button>
-        )}
-      </nav>
+        </div>
 
-      <div className="hackathon-nav__actions">
-        {userEmail ? (
-          <div className="hackathon-nav__user-menu" ref={menuRef}>
-            <button
-              type="button"
-              className="hackathon-nav__hello"
-              onClick={() => setMenuOpen((o) => !o)}
-              aria-expanded={menuOpen}
+        <ul className="hackathon-nav__panel-list">
+          {NAV_ITEMS.map((item) => (
+            <li
+              key={item.path}
+              className={`hackathon-nav__panel-item${activePath === item.path ? ' is-active' : ''}`}
             >
-              <span className="hackathon-nav__hello-label">Hello</span>
-              <strong>{displayName || 'Builder'}</strong>
-            </button>
-
-            {menuOpen && (
-              <div className="hackathon-nav__user-dropdown">
-                <Link
-                  className="hackathon-nav__menu-item"
-                  to="/profile"
-                  onClick={() => setMenuOpen(false)}
-                >
-                  Profile
-                </Link>
-                {isAdmin && (
-                  <Link
-                    className="hackathon-nav__menu-item hackathon-nav__menu-item--admin"
-                    to="/admin"
-                    onClick={() => setMenuOpen(false)}
-                  >
-                    Admin Portal
-                  </Link>
-                )}
-                <div className="hackathon-nav__menu-divider" />
-                <button
-                  type="button"
-                  className="hackathon-nav__menu-item hackathon-nav__menu-item--danger"
-                  onClick={() => { setMenuOpen(false); onSignOut() }}
-                >
-                  Sign out
-                </button>
-              </div>
-            )}
-          </div>
-        ) : (
-          <button type="button" className="hackathon-nav__action hackathon-nav__action--signin" onClick={onSignIn}>
-            Sign In / Register
-          </button>
-        )}
-      </div>
-    </header>
+              <button
+                type="button"
+                className="hackathon-nav__panel-link"
+                onClick={() => handleSelect(item.path)}
+              >
+                {item.label}
+              </button>
+            </li>
+          ))}
+        </ul>
+      </aside>
+    </>
   )
 }

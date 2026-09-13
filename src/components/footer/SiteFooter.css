@@ -1,0 +1,105 @@
+.site-footer {
+  position: relative;
+  z-index: 1;
+  background: #05030a;
+  border-top: 1px solid rgba(248, 246, 242, 0.1);
+  padding: 40px clamp(20px, 4vw, 48px);
+}
+
+.site-footer__inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.site-footer__brand {
+  font-family: var(--heading), 'Outfit', sans-serif;
+  font-weight: 600;
+  font-size: 1rem;
+  color: rgba(248, 246, 242, 0.85);
+}
+
+.site-footer__social {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.site-footer__social-link {
+  display: flex;
+  color: rgba(248, 246, 242, 0.55);
+  transition: color 180ms ease;
+}
+
+.site-footer__social-link:hover,
+.site-footer__social-link:focus-visible {
+  color: #ffd857;
+}
+
+.site-footer__cta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+}
+
+.site-footer__box {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 7px 12px;
+  border-radius: 6px;
+  background: #ffd857;
+  color: #150c22;
+  font-family: 'Space Mono', monospace;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  transition: filter 200ms ease;
+}
+
+.site-footer__cta:hover .site-footer__box {
+  filter: brightness(1.1);
+}
+
+/* Each box jumps between positions in discrete steps — no easing, no glide —
+   like an old sprite hopping up/down/left/right, not floating. Offset in
+   duration and delay so the three never jump in sync. Pure CSS, no JS. */
+.site-footer__box--a { animation: footer-box-hop-a 1.6s steps(4, jump-none) infinite; }
+.site-footer__box--b { animation: footer-box-hop-b 1.4s steps(4, jump-none) infinite; animation-delay: 0.15s; }
+.site-footer__box--c { animation: footer-box-hop-c 1.8s steps(4, jump-none) infinite; animation-delay: 0.3s; }
+
+@keyframes footer-box-hop-a {
+  0%, 100% { transform: translate(0, 0); }
+  25%      { transform: translate(0, -12px); }
+  50%      { transform: translate(10px, -12px); }
+  75%      { transform: translate(10px, 0); }
+}
+
+@keyframes footer-box-hop-b {
+  0%, 100% { transform: translate(0, 0); }
+  25%      { transform: translate(-10px, 0); }
+  50%      { transform: translate(-10px, 12px); }
+  75%      { transform: translate(0, 12px); }
+}
+
+@keyframes footer-box-hop-c {
+  0%, 100% { transform: translate(0, 0); }
+  25%      { transform: translate(10px, 0); }
+  50%      { transform: translate(10px, 12px); }
+  75%      { transform: translate(0, 12px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .site-footer__box--a,
+  .site-footer__box--b,
+  .site-footer__box--c {
+    animation: none;
+  }
+}
