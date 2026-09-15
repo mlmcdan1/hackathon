@@ -1,0 +1,28 @@
+{
+  "slug": "Spring Build Weekend",
+  "title": "Spring Build Weekend",
+  "category": "Web Dev",
+  "tag": "Sprint",
+  "description": "Two-day local sprint focused on shipping production-ready apps with modern web technologies.",
+  "location": "Augusta, GA",
+  "format": "in-person",
+  "color": "orange",
+  "startDate": "2026-05-09",
+  "endDate": "2026-05-11",
+  "startTime": "09:00",
+  "endTime": "17:00",
+  "duration": "48 hrs",
+  "prizePool": "$2,500",
+  "maxTeams": 16,
+  "currentTeams": 8,
+  "maxParticipants": 64,
+  "currentParticipants": 32,
+  "registrationOpen": false,
+  "published": true,
+  "tags": [
+    "React",
+    "Node.js",
+    "Web"
+  ],
+  "image": null
+}

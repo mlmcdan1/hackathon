@@ -1,0 +1,28 @@
+{
+  "slug": "Summer Code Jam",
+  "title": "Summer Code Jam",
+  "category": "Open Theme",
+  "tag": "Hackathon",
+  "description": "Open-theme summer hackathon. Build whatever inspires you \u2014 solo or in a team of up to four.",
+  "location": "Online",
+  "format": "virtual",
+  "color": "yellow",
+  "startDate": "2026-06-14",
+  "endDate": "2026-06-15",
+  "startTime": "10:00",
+  "endTime": "18:00",
+  "duration": "32 hrs",
+  "prizePool": "$4,000",
+  "maxTeams": 30,
+  "currentTeams": 28,
+  "maxParticipants": 120,
+  "currentParticipants": 112,
+  "registrationOpen": false,
+  "published": true,
+  "tags": [
+    "Open Theme",
+    "Remote",
+    "Beginner Friendly"
+  ],
+  "image": null
+}

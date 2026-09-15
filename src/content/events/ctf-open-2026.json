@@ -1,0 +1,28 @@
+{
+  "slug": "Cybersecurity CTF Open",
+  "title": "Cybersecurity CTF Open",
+  "category": "Security",
+  "tag": "Hackathon",
+  "description": "Capture the Flag competition featuring web exploitation, reverse engineering, and cryptography challenges for all skill levels.",
+  "location": "Augusta, GA",
+  "format": "in-person",
+  "color": "teal",
+  "startDate": "2026-05-01",
+  "endDate": "2026-05-02",
+  "startTime": "09:00",
+  "endTime": "21:00",
+  "duration": "36 hrs",
+  "prizePool": "$3,000",
+  "maxTeams": 20,
+  "currentTeams": 14,
+  "maxParticipants": 80,
+  "currentParticipants": 56,
+  "registrationOpen": false,
+  "published": true,
+  "tags": [
+    "CTF",
+    "Web",
+    "Cryptography"
+  ],
+  "image": null
+}

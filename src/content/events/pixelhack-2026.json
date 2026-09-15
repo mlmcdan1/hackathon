@@ -1,0 +1,29 @@
+{
+  "slug": "PixelHack 2026",
+  "title": "PixelHack 2026",
+  "category": "Game Dev",
+  "tag": "Hackathon",
+  "description": "24-hour game dev sprint. Build anything playable from scratch \u2014 browser game, mobile, or desktop. All engines welcome.",
+  "location": "Online",
+  "format": "virtual",
+  "color": "red",
+  "startDate": "2026-09-05",
+  "endDate": "2026-09-06",
+  "startTime": "12:00",
+  "endTime": "12:00",
+  "duration": "24 hrs",
+  "prizePool": "$3,000",
+  "maxTeams": 50,
+  "currentTeams": 0,
+  "maxParticipants": 200,
+  "currentParticipants": 0,
+  "registrationOpen": false,
+  "published": false,
+  "tags": [
+    "Game Dev",
+    "Unity",
+    "Godot",
+    "Creative"
+  ],
+  "image": null
+}
