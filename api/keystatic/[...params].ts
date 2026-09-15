@@ -7,8 +7,11 @@
 import { makeGenericAPIRouteHandler } from '@keystatic/core/api/generic'
 import keystaticConfig from '../../keystatic.config'
 
-export const config = { runtime: 'edge' }
-
+// Keystatic's field builders (fields.text(), fields.image(), etc., used in
+// keystatic.config.ts) double as the admin UI's form definitions, so they
+// pull in the full @keystar/ui component tree — too heavy for Vercel's
+// restricted Edge runtime allowlist. This runs as a normal Node.js
+// serverless function instead, which has no such module restriction.
 const handler = makeGenericAPIRouteHandler({ config: keystaticConfig })
 
 export default async function (req: Request) {
@@ -18,5 +21,5 @@ export default async function (req: Request) {
     url: req.url,
     json: () => req.json(),
   })
-  return new Response(res.body, res)
+  return new Response(res.body as ConstructorParameters<typeof Response>[0], res)
 }
