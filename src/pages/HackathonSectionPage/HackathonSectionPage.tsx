@@ -13,18 +13,19 @@ export default function HackathonSectionPage() {
     setTimeout(() => navigate('/'), 300)
   }
 
+  // Undoes HackathonPage.css's global `overscroll-behavior: none` on body
+  // (still in effect here — that stylesheet is imported above too) so this
+  // page's native scroll bounces normally. Does NOT touch `overflow`:
+  // nothing on this page or Lenis actually sets it inline, and forcing it
+  // to 'auto' on *both* html and body turned body into its own nested,
+  // roughly-viewport-height scroll container — trapping the whole event
+  // list inside it and leaving the footer (rendered after body's box in
+  // the outer layout) stuck just below the fold regardless of how far you
+  // scrolled the list itself.
   useEffect(() => {
-    const previousBodyOverflow = document.body.style.overflow
-    const previousHtmlOverflow = document.documentElement.style.overflow
     const previousBodyOverscroll = document.body.style.overscrollBehavior
-
-    document.documentElement.style.overflow = 'auto'
-    document.body.style.overflow = 'auto'
     document.body.style.overscrollBehavior = 'auto'
-
     return () => {
-      document.documentElement.style.overflow = previousHtmlOverflow
-      document.body.style.overflow = previousBodyOverflow
       document.body.style.overscrollBehavior = previousBodyOverscroll
     }
   }, [])

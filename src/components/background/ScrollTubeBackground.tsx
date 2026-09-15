@@ -29,9 +29,9 @@ const SHAPE_COUNT = 1800
 // simply invisible, never a layout problem.
 const TOTAL_HEIGHT = 7500
 const BASE_RADIUS = 10 // half of the reference's 20px circle
-const REVEAL_WINDOW = 0.15 // how much scroll-progress it takes one shape to fade in
-const HUE_DRIFT_PER_SEC = 5 // degrees/sec the color appears to travel down the tube
-const SPIN_RAD_PER_SEC = 0.06 // how fast each ring slowly swirls in place
+const REVEAL_WINDOW = 0.35 // how much scroll-progress it takes one shape to fade in
+const HUE_DRIFT_PER_SEC = 0.4 // degrees/sec the color appears to travel down the tube
+const SPIN_RAD_PER_SEC = 0.005 // how fast each ring slowly swirls in place
 
 interface Shape {
   y: number
@@ -130,7 +130,7 @@ export default function ScrollTubeBackground() {
         trigger: container,
         start: 'top 75%',
         end: 'bottom bottom',
-        scrub: 1,
+        scrub: 3,
         onUpdate: (self) => {
           progressRef.current = self.progress
         },

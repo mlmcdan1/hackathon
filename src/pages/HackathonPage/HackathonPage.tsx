@@ -337,8 +337,8 @@ export default function Homepage() {
         <div className="hero-content">
           <h1 className="hero-title-sr">Augusta Dev Hackathon 2026</h1>
           <img className="hero-title-art" src="/AugustaDevHeader.png" alt="Augusta Dev" />
-          <p className="tagline">Think. Create. Innovate.</p>
-          <p className="hero-body">Connect with a community of innovators and create without limits. Your project starts here.</p>
+          <p className="tagline">Community Hackathon</p>
+          <p className="hero-body">Augusta's community for builders. Meet other developers, work on real projects, and ship something you made.</p>
           <button className="cta-button" type="button" onClick={() => document.getElementById('hp-world')?.scrollIntoView({ behavior: 'smooth' })}>
             Explore Events
           </button>

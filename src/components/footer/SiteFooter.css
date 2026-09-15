@@ -35,9 +35,16 @@
   transition: color 180ms ease;
 }
 
-.site-footer__social-link:hover,
-.site-footer__social-link:focus-visible {
-  color: #ffd857;
+/* Each platform hovers to its own real brand color rather than one shared
+   accent — LinkedIn blue, Discord's "blurple." */
+.site-footer__social-link--linkedin:hover,
+.site-footer__social-link--linkedin:focus-visible {
+  color: #0a66c2;
+}
+
+.site-footer__social-link--discord:hover,
+.site-footer__social-link--discord:focus-visible {
+  color: #5865f2;
 }
 
 .site-footer__cta {

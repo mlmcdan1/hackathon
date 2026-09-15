@@ -412,7 +412,8 @@ body {
   text-transform: uppercase;
 }
 
-.tagline::before {
+.tagline::before,
+.tagline::after {
   content: '';
   width: 2.5rem;
   height: 2px;
@@ -1465,11 +1466,21 @@ body {
   }
 }
 
+/* This used to be height:100vh + overflow-y:auto — a fixed-height,
+   self-contained scroll box for a CRT power-off transition effect
+   (.hack-section-route--powering-off / __tv-off / __tv-line below) that
+   the component doesn't actually apply anywhere anymore. Left in place,
+   it silently trapped the *entire* event list inside its own internal
+   scrollbar: the outer page only ever needed to scroll about one viewport
+   height to reach the footer (a normal sibling right after this box),
+   regardless of how many events were scrolled through inside it — which
+   is what made the footer read as permanently "stuck" just below the
+   fold. Flowing normally (no fixed height, no self-scroll) lets this
+   page's real content height reach the outer document like every other
+   page's does, so the footer sits at the true bottom again. */
 .hack-section-route {
   position: relative;
-  height: 100vh;
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow-x: clip;
   padding: 0;
   background: #343434;
 }
@@ -3494,23 +3505,17 @@ body {
 
 .explore-hero {
   display: flex;
-  align-items: center;
-  gap: clamp(32px, 6vw, 80px);
+  justify-content: center;
   margin-bottom: 100px;
 }
 
 .explore-hero__text {
-  flex: 1 1 55%;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: center;
   gap: 20px;
-}
-
-.explore-hero__visual {
-  flex: 1 1 45%;
-  aspect-ratio: 1 / 1;
-  max-width: 420px;
+  max-width: 720px;
+  text-align: center;
 }
 
 .explore-eyebrow {
@@ -3640,8 +3645,9 @@ body {
    between them) rather than sitting static. Each card gets its own shape
    and timing so the three never move in sync. */
 .explore-card__video-wrap {
-  width: 46%;
+  width: 68%;
   aspect-ratio: 1 / 1;
+  margin-bottom: 64px;
   background: #05030a;
   overflow: hidden;
   will-change: transform, clip-path;
@@ -3807,16 +3813,6 @@ body {
 }
 
 @media (max-width: 900px) {
-  .explore-hero {
-    flex-direction: column;
-    text-align: center;
-  }
-  .explore-hero__text {
-    align-items: center;
-  }
-  .explore-hero__visual {
-    max-width: 280px;
-  }
   .explore-grid {
     grid-template-columns: 1fr;
   }
@@ -3825,7 +3821,7 @@ body {
     padding-top: 56px;
   }
   .explore-card__video-wrap {
-    width: 58%;
+    width: 80%;
   }
 }
 

@@ -10,7 +10,18 @@
     radial-gradient(ellipse 40%  30% at 10% 70%,  rgba(51, 255, 51, 0.04)  0%, transparent 50%);
   font-family: 'Space Mono', monospace;
   color: #fff;
-  overflow-x: hidden;
+  /* `overflow-x: hidden` alone makes the browser silently force overflow-y
+     to `auto` per spec — turning this into its own scrollable box and
+     trapping the event list's real height inside it. The footer, sitting
+     right after this element in the outer document, then only had to
+     travel the short distance to this box's own (wrong) bottom edge
+     instead of the page's real one — which read as the footer being
+     "stuck" just below the fold. Explicitly setting overflow-y: visible
+     does NOT prevent this — the auto-conversion applies even when the
+     other axis is explicitly `visible`, not just when it's left unset.
+     `clip` is the value made for exactly this case: it clips one axis
+     without ever forcing the other into its own scroll container. */
+  overflow-x: clip;
 }
 
 /* subtle noise grain */

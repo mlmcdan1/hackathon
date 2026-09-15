@@ -1,7 +1,6 @@
 import { useEffect, useRef, type RefObject } from 'react'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
-import ParallaxGameboy from './ParallaxGameboy'
 
 gsap.registerPlugin(ScrollTrigger)
 
@@ -175,7 +174,6 @@ function CommunityVideoCard({ card, index }: { card: CommunityCard; index: numbe
 export default function ExploreSection({ onExplore }: { onExplore: () => void }) {
   const sectionRef = useRef<HTMLDivElement>(null)
   const headingRef = useRef<HTMLHeadingElement>(null)
-  const parallaxWrapRef = useRef<HTMLDivElement>(null)
   const gridRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -197,18 +195,6 @@ export default function ExploreSection({ onExplore }: { onExplore: () => void })
         gsap.timeline({ scrollTrigger: { trigger: headingRef.current, start: 'top 85%' } })
           .from(texts, { yPercent: 110, duration: 0.85, ease: 'power3.out', stagger: 0.12 }, 0.1)
           .to(blocks, { scaleX: 0, duration: 0.6, ease: 'power2.inOut', stagger: 0.12 }, 0)
-      }
-
-      // Parallax: the gameboy's wrapper moves at a different rate than the
-      // surrounding text as the section scrolls past, purely via a scrubbed
-      // transform on its container — the model itself stays a simple idle
-      // canvas, same low-risk pattern already used on the phases section.
-      if (parallaxWrapRef.current && sectionRef.current) {
-        gsap.to(parallaxWrapRef.current, {
-          yPercent: -16,
-          ease: 'none',
-          scrollTrigger: { trigger: sectionRef.current, start: 'top bottom', end: 'bottom top', scrub: true },
-        })
       }
 
       // Staggered grid reveal — fade + rise, offset per card.
@@ -236,9 +222,6 @@ export default function ExploreSection({ onExplore }: { onExplore: () => void })
             <span className="line-mask"><span className="line-block" /><span className="line-text">Hackathons</span></span>
           </h2>
           <button type="button" className="explore-cta" onClick={onExplore}>Explore</button>
-        </div>
-        <div className="explore-hero__visual" ref={parallaxWrapRef}>
-          <ParallaxGameboy />
         </div>
       </div>
 
