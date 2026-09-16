@@ -80,7 +80,7 @@ export default function AdminPage() {
 
   async function checkSession() {
     try {
-      const res = await fetch('/api/auth/session')
+      const res = await fetch('/api/auth/whoami')
       const data: Session = await res.json()
       setSession(data)
       if (data.loggedIn) void loadEvents()

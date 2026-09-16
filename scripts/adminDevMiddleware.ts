@@ -54,7 +54,7 @@ export function adminDevMiddleware(): Plugin {
         // Locally there's no GitHub login — deployed production uses real
         // OAuth (api/auth/*), but `npm run dev` just always looks logged in
         // so editing content while developing doesn't need any setup.
-        if (url === '/api/auth/session') {
+        if (url === '/api/auth/whoami') {
           return sendJson(res, 200, { loggedIn: true, login: 'local-dev' })
         }
 
