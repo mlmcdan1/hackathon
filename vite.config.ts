@@ -1,9 +1,10 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import { keystaticDevMiddleware } from './scripts/keystaticDevMiddleware'
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), keystaticDevMiddleware()],
   build: {
     rollupOptions: {
       output: {
