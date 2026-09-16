@@ -1,4 +1,4 @@
-import { getSessionToken } from '../../_lib/github'
+import { getSessionToken, jsonResponse } from '../../_lib/github'
 import { saveEvent, deleteEvent, isValidId, type EventFields } from '../../_lib/events'
 
 const REQUIRED_FIELDS: (keyof EventFields)[] = ['title', 'description', 'category', 'location', 'startDate', 'endDate']
@@ -17,35 +17,35 @@ function idFromUrl(req: Request): string | null {
 
 export async function PUT(req: Request) {
   const token = getSessionToken(req)
-  if (!token) return Response.json({ error: 'Not logged in' }, { status: 401 })
+  if (!token) return jsonResponse({ error: 'Not logged in' }, 401)
 
   const id = idFromUrl(req)
-  if (!id) return Response.json({ error: 'Invalid event id' }, { status: 400 })
+  if (!id) return jsonResponse({ error: 'Invalid event id' }, 400)
 
   const body = await req.json()
-  if (!validateFields(body)) return Response.json({ error: 'Missing required fields' }, { status: 400 })
+  if (!validateFields(body)) return jsonResponse({ error: 'Missing required fields' }, 400)
 
   try {
     await saveEvent(token, id, body, `Update hackathon: ${body.title}`)
-    return Response.json({ id, ...body })
+    return jsonResponse({ id, ...body })
   } catch (err) {
     console.error('Failed to update event:', err)
-    return Response.json({ error: 'Failed to save to GitHub' }, { status: 500 })
+    return jsonResponse({ error: 'Failed to save to GitHub' }, 500)
   }
 }
 
 export async function DELETE(req: Request) {
   const token = getSessionToken(req)
-  if (!token) return Response.json({ error: 'Not logged in' }, { status: 401 })
+  if (!token) return jsonResponse({ error: 'Not logged in' }, 401)
 
   const id = idFromUrl(req)
-  if (!id) return Response.json({ error: 'Invalid event id' }, { status: 400 })
+  if (!id) return jsonResponse({ error: 'Invalid event id' }, 400)
 
   try {
     await deleteEvent(token, id)
-    return Response.json({ ok: true })
+    return jsonResponse({ ok: true })
   } catch (err) {
     console.error('Failed to delete event:', err)
-    return Response.json({ error: 'Failed to delete on GitHub' }, { status: 500 })
+    return jsonResponse({ error: 'Failed to delete on GitHub' }, 500)
   }
 }

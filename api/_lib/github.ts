@@ -14,6 +14,17 @@ export function repoConfig() {
   return { owner, repo, branch }
 }
 
+// `Response.json` (the static helper) isn't supported by this project's
+// Vercel Node runtime — it silently crashes the function
+// (FUNCTION_INVOCATION_FAILED) rather than erroring at build time.
+// `new Response(...)` works fine, so every JSON response goes through this.
+export function jsonResponse(body: unknown, status = 200): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { 'Content-Type': 'application/json' },
+  })
+}
+
 export function getSessionToken(req: Request): string | null {
   const cookie = req.headers.get('cookie') ?? ''
   const match = cookie.match(new RegExp(`(?:^|;\\s*)${SESSION_COOKIE}=([^;]+)`))

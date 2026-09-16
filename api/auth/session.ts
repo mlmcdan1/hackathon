@@ -1,11 +1,11 @@
-import { getSessionToken, githubGetUser } from '../_lib/github'
+import { getSessionToken, githubGetUser, jsonResponse } from '../_lib/github'
 
 export async function GET(req: Request) {
   const token = getSessionToken(req)
-  if (!token) return Response.json({ loggedIn: false })
+  if (!token) return jsonResponse({ loggedIn: false })
 
   const user = await githubGetUser(token)
-  if (!user) return Response.json({ loggedIn: false })
+  if (!user) return jsonResponse({ loggedIn: false })
 
-  return Response.json({ loggedIn: true, login: user.login, avatar: user.avatar_url })
+  return jsonResponse({ loggedIn: true, login: user.login, avatar: user.avatar_url })
 }
