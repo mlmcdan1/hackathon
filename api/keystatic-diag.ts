@@ -2,7 +2,7 @@
 // actually reaching the Production runtime, without ever exposing their
 // values. Safe to hit directly in a browser; delete once the OAuth login
 // issue is resolved.
-export default async function () {
+export async function GET() {
   const body = JSON.stringify(
     {
       hasClientId: Boolean(process.env.KEYSTATIC_GITHUB_CLIENT_ID),

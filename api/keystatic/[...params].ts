@@ -1,4 +1,4 @@
-// Vercel Edge Function backing the Keystatic admin UI at /keystatic.
+// Vercel Node.js function backing the Keystatic admin UI at /keystatic.
 // Handles GitHub OAuth (login/callback) and the git-write API calls the UI
 // makes when an editor saves an entry — nothing here touches a database,
 // it all just proxies to GitHub as the signed-in editor. Requires
@@ -14,7 +14,13 @@ import keystaticConfig from '../../keystatic.config'
 // serverless function instead, which has no such module restriction.
 const handler = makeGenericAPIRouteHandler({ config: keystaticConfig })
 
-export default async function (req: Request) {
+// Vercel's Node runtime treats a bare `export default` as the legacy
+// `(req, res) => void` signature and silently discards a returned Response
+// (logged as a warning, then the function hangs until it times out) — it
+// only recognizes the Web fetch-style API via named HTTP-method exports.
+// Keystatic's handler only ever receives GET or POST, so both are wired to
+// the same logic here.
+async function handleRequest(req: Request) {
   try {
     const res = await handler({
       headers: req.headers,
@@ -47,3 +53,6 @@ export default async function (req: Request) {
     return new Response('Internal error in Keystatic API route — check Vercel function logs.', { status: 500 })
   }
 }
+
+export const GET = handleRequest
+export const POST = handleRequest
