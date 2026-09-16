@@ -38,6 +38,51 @@
   color: #fca5a5;
 }
 
+.adm-banner--success {
+  background: rgba(74, 222, 128, 0.12);
+  border: 1px solid rgba(74, 222, 128, 0.3);
+  color: #86efac;
+}
+
+.adm-session {
+  font-size: 0.82rem;
+  color: #94a3b8;
+  margin-bottom: 16px;
+}
+
+.adm-session a {
+  color: #5eead4;
+}
+
+.adm--gate {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.adm-gate {
+  text-align: center;
+  max-width: 360px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.adm-gate__title {
+  font-family: var(--heading);
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #f8fafc;
+  margin: 0;
+}
+
+.adm-gate__text {
+  color: #94a3b8;
+  line-height: 1.5;
+  margin: 0;
+}
+
 .adm-empty {
   color: #94a3b8;
   padding: 32px 0;

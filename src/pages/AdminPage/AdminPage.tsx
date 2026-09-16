@@ -61,18 +61,33 @@ const BLANK_FORM: FormState = {
   image: null,
 }
 
+type Session = { loggedIn: boolean; login?: string }
+
 export default function AdminPage() {
+  const [session, setSession] = useState<Session | null>(null)
   const [events, setEvents] = useState<EventRecord[] | null>(null)
   const [editingId, setEditingId] = useState<string | 'new' | null>(null)
   const [form, setForm] = useState<FormState>(BLANK_FORM)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [message, setMessage] = useState<string | null>(null)
   const [tagDraft, setTagDraft] = useState('')
   const [uploading, setUploading] = useState(false)
 
   useEffect(() => {
-    void loadEvents()
+    void checkSession()
   }, [])
+
+  async function checkSession() {
+    try {
+      const res = await fetch('/api/auth/session')
+      const data: Session = await res.json()
+      setSession(data)
+      if (data.loggedIn) void loadEvents()
+    } catch {
+      setSession({ loggedIn: false })
+    }
+  }
 
   async function loadEvents() {
     try {
@@ -81,7 +96,7 @@ export default function AdminPage() {
       setEvents(await res.json())
     } catch {
       setEvents([])
-      setError('Couldn’t load hackathons. Make sure you’re running `npm run dev`, not viewing the live site.')
+      setError('Couldn’t load hackathons. Try refreshing the page.')
     }
   }
 
@@ -89,6 +104,7 @@ export default function AdminPage() {
     setForm(BLANK_FORM)
     setTagDraft('')
     setError(null)
+    setMessage(null)
     setEditingId('new')
   }
 
@@ -97,6 +113,7 @@ export default function AdminPage() {
     setForm(fields)
     setTagDraft('')
     setError(null)
+    setMessage(null)
     setEditingId(id)
   }
 
@@ -112,6 +129,7 @@ export default function AdminPage() {
     }
     setSaving(true)
     setError(null)
+    setMessage(null)
     try {
       const isNew = editingId === 'new'
       const res = await fetch(isNew ? '/api/admin/events' : `/api/admin/events/${editingId}`, {
@@ -121,9 +139,10 @@ export default function AdminPage() {
       })
       if (!res.ok) throw new Error()
       setEditingId(null)
+      setMessage('Saved! Your change is live on the website within a minute or two.')
       await loadEvents()
     } catch {
-      setError('Something went wrong saving — check the terminal running `npm run dev` for details.')
+      setError('Something went wrong saving. Please try again in a moment.')
     } finally {
       setSaving(false)
     }
@@ -131,12 +150,15 @@ export default function AdminPage() {
 
   async function handleDelete(event: EventRecord) {
     if (!window.confirm(`Delete "${event.title}"? This can’t be undone.`)) return
+    setError(null)
+    setMessage(null)
     try {
       const res = await fetch(`/api/admin/events/${event.id}`, { method: 'DELETE' })
       if (!res.ok) throw new Error()
+      setMessage('Deleted. That change is live on the website within a minute or two.')
       await loadEvents()
     } catch {
-      setError('Couldn’t delete that event — check the terminal running `npm run dev` for details.')
+      setError('Couldn’t delete that event. Please try again in a moment.')
     }
   }
 
@@ -161,7 +183,7 @@ export default function AdminPage() {
       const { path } = await res.json()
       setForm((f) => ({ ...f, image: path }))
     } catch {
-      setError('Couldn’t upload that image — check the terminal running `npm run dev` for details.')
+      setError('Couldn’t upload that image. Please try again in a moment.')
     } finally {
       setUploading(false)
       e.target.value = ''
@@ -184,6 +206,28 @@ export default function AdminPage() {
 
   const isEditing = editingId !== null
 
+  if (session === null) {
+    return (
+      <div className="adm">
+        <p className="adm-empty">Loading…</p>
+      </div>
+    )
+  }
+
+  if (!session.loggedIn) {
+    return (
+      <div className="adm adm--gate">
+        <div className="adm-gate">
+          <h1 className="adm-gate__title">Manage Hackathons</h1>
+          <p className="adm-gate__text">Sign in with your GitHub account to add, edit, or remove hackathons.</p>
+          <a className="adm-btn adm-btn--primary" href="/api/auth/login">
+            Log in with GitHub
+          </a>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="adm">
       <div className="adm__topbar">
@@ -195,6 +239,11 @@ export default function AdminPage() {
         )}
       </div>
 
+      <div className="adm-session">
+        Signed in as {session.login} · <a href="/api/auth/logout">Log out</a>
+      </div>
+
+      {message && <div className="adm-banner adm-banner--success">{message}</div>}
       {error && <div className="adm-banner adm-banner--error">{error}</div>}
 
       {!isEditing && (

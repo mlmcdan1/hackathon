@@ -50,6 +50,14 @@ export function adminDevMiddleware(): Plugin {
     configureServer(server) {
       server.middlewares.use(async (req: IncomingMessage, res: ServerResponse, next) => {
         const url = req.url ?? ''
+
+        // Locally there's no GitHub login — deployed production uses real
+        // OAuth (api/auth/*), but `npm run dev` just always looks logged in
+        // so editing content while developing doesn't need any setup.
+        if (url === '/api/auth/session') {
+          return sendJson(res, 200, { loggedIn: true, login: 'local-dev' })
+        }
+
         if (!url.startsWith('/api/admin/')) return next()
 
         try {
