@@ -13,10 +13,6 @@
   "endTime": "21:00",
   "duration": "36 hrs",
   "prizePool": "$3,000",
-  "maxTeams": 20,
-  "currentTeams": 14,
-  "maxParticipants": 80,
-  "currentParticipants": 56,
   "registrationOpen": false,
   "published": true,
   "tags": [

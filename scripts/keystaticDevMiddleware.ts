@@ -46,7 +46,7 @@ export function keystaticDevMiddleware(): Plugin {
             for (const [key, value] of Object.entries(result.headers)) resHeaders[key] = String(value)
           }
 
-          res.writeHead(result.status, resHeaders)
+          res.writeHead(result.status ?? 500, resHeaders)
           res.end(result.body ?? undefined)
         } catch (err) {
           console.error('Keystatic dev middleware error:', err)

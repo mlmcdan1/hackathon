@@ -123,26 +123,6 @@ export default config({
           label: 'Prize Pool',
           description: 'What’s up for grabs, e.g. "$3,000" or "Network" if there’s no cash prize.',
         }),
-        maxTeams: fields.integer({
-          label: 'Team Limit',
-          description: 'The most teams you’ll allow. Use 0 if you’re not tracking teams.',
-          defaultValue: 0,
-        }),
-        currentTeams: fields.integer({
-          label: 'Teams Signed Up',
-          description: 'How many teams have registered so far — update this as people sign up.',
-          defaultValue: 0,
-        }),
-        maxParticipants: fields.integer({
-          label: 'Participant Limit',
-          description: 'The most people you’ll allow to attend.',
-          defaultValue: 0,
-        }),
-        currentParticipants: fields.integer({
-          label: 'People Signed Up',
-          description: 'How many people have registered so far.',
-          defaultValue: 0,
-        }),
         registrationOpen: fields.checkbox({
           label: 'Registration Open',
           description: 'Turn this on to let people sign up, and off once registration closes.',

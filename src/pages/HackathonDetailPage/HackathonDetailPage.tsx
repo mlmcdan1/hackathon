@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Calendar, Clock, MapPin, Trophy, Users } from 'lucide-react'
+import { ArrowLeft, Calendar, Clock, MapPin, Trophy } from 'lucide-react'
 import placeholderImage from '../../assets/placeholderImage.png'
 import {
   computeStatus,
@@ -143,9 +143,6 @@ export default function HackathonDetailPage() {
 
   const startDt   = parseEventDateTime(event.startDate, event.startTime)
   const endDt     = parseEventDateTime(event.endDate,   event.endTime)
-  const spotsLeft = event.maxParticipants > 0
-    ? event.maxParticipants - event.currentParticipants
-    : null
   const loc = event.format === 'virtual' ? 'Online' : event.location
 
   let countdownTarget: Date | null = null
@@ -281,28 +278,6 @@ export default function HackathonDetailPage() {
                     <span className="hdp-info__val">{loc}</span>
                   </div>
                 </li>
-                {event.maxParticipants > 0 && (
-                  <li className="hdp-info__row">
-                    <Users size={14} className="hdp-info__icon" />
-                    <div>
-                      <span className="hdp-info__key">Participants</span>
-                      <span className="hdp-info__val">
-                        {spotsLeft !== null
-                          ? `${spotsLeft} of ${event.maxParticipants} spots left`
-                          : `${event.currentParticipants} registered`}
-                      </span>
-                    </div>
-                  </li>
-                )}
-                {event.maxTeams > 0 && (
-                  <li className="hdp-info__row">
-                    <Users size={14} className="hdp-info__icon" />
-                    <div>
-                      <span className="hdp-info__key">Teams</span>
-                      <span className="hdp-info__val">{event.currentTeams} / {event.maxTeams} teams</span>
-                    </div>
-                  </li>
-                )}
               </ul>
             </div>
 

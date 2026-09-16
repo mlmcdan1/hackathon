@@ -15,10 +15,6 @@ export interface EventRecord {
   endTime: string
   duration: string
   prizePool: string
-  maxTeams: number
-  currentTeams: number
-  maxParticipants: number
-  currentParticipants: number
   registrationOpen: boolean
   published: boolean
   tags: string[]
@@ -64,11 +60,6 @@ export function displayMonth(event: EventRecord): string {
 
 export function displayYear(event: EventRecord): string {
   return new Date(`${event.startDate}T00:00:00`).getFullYear().toString()
-}
-
-export function displaySpots(event: EventRecord): string {
-  if (event.maxParticipants === 0) return 'Open'
-  return `${event.maxParticipants}+ devs`
 }
 
 export function publicStatusLabel(status: ComputedStatus): 'Open Reg' | 'Upcoming' | 'Active Now' | 'Completed' | 'Draft' {

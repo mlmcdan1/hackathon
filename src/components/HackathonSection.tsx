@@ -1,4 +1,4 @@
-import { MapPin, Trophy, Users, X } from 'lucide-react'
+import { Clock, MapPin, Trophy, X } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 
@@ -13,7 +13,6 @@ import {
   computeStatus,
   displayDay,
   displayMonth,
-  displaySpots,
   displayYear,
   fetchPublicEvents,
   publicStatusLabel,
@@ -204,7 +203,9 @@ export default function HackathonSection({ onNavigateHome }: Props) {
                   <p className="hs-card__desc">{event.description}</p>
                   <div className="hs-card__meta">
                     <span className="hs-card__meta-item"><MapPin size={11} /> {loc}</span>
-                    <span className="hs-card__meta-item"><Users size={11} /> {displaySpots(event)}</span>
+                    {event.duration && (
+                      <span className="hs-card__meta-item"><Clock size={11} /> {event.duration}</span>
+                    )}
                     <span className="hs-card__meta-item"><Trophy size={11} /> {event.prizePool}</span>
                   </div>
                 </div>
