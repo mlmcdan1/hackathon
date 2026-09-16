@@ -1,5 +1,5 @@
-import { getSessionToken, jsonResponse } from '../../_lib/github'
-import { saveEvent, deleteEvent, isValidId, type EventFields } from '../../_lib/events'
+import { getSessionToken, jsonResponse } from '../../../lib/server/github'
+import { saveEvent, deleteEvent, isValidId, type EventFields } from '../../../lib/server/events'
 
 const REQUIRED_FIELDS: (keyof EventFields)[] = ['title', 'description', 'category', 'location', 'startDate', 'endDate']
 

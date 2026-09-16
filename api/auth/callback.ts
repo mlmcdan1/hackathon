@@ -1,4 +1,4 @@
-import { sessionCookie } from '../_lib/github'
+import { sessionCookie } from '../../lib/server/github'
 
 export async function GET(req: Request) {
   const url = new URL(req.url)

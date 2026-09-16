@@ -1,4 +1,4 @@
-import { clearSessionCookie } from '../_lib/github'
+import { clearSessionCookie } from '../../lib/server/github'
 
 export function GET() {
   return new Response(null, {

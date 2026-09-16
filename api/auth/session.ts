@@ -1,4 +1,4 @@
-import { getSessionToken, githubGetUser, jsonResponse } from '../_lib/github'
+import { getSessionToken, githubGetUser, jsonResponse } from '../../lib/server/github'
 
 export async function GET(req: Request) {
   const token = getSessionToken(req)

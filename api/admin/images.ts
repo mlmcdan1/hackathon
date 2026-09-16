@@ -1,5 +1,5 @@
-import { getSessionToken, jsonResponse } from '../_lib/github'
-import { saveImage } from '../_lib/events'
+import { getSessionToken, jsonResponse } from '../../lib/server/github'
+import { saveImage } from '../../lib/server/events'
 
 export async function POST(req: Request) {
   const token = getSessionToken(req)
