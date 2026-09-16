@@ -5,8 +5,8 @@ export async function GET(req: Request) {
   const code = url.searchParams.get('code')
   if (!code) return new Response('Missing authorization code from GitHub.', { status: 400 })
 
-  const clientId = process.env.GITHUB_CLIENT_ID
-  const clientSecret = process.env.GITHUB_CLIENT_SECRET
+  const clientId = process.env.GITHUB_CLIENT_ID ?? process.env.KEYSTATIC_GITHUB_CLIENT_ID
+  const clientSecret = process.env.GITHUB_CLIENT_SECRET ?? process.env.KEYSTATIC_GITHUB_CLIENT_SECRET
   if (!clientId || !clientSecret) {
     return new Response('Missing GITHUB_CLIENT_ID / GITHUB_CLIENT_SECRET environment variables', { status: 500 })
   }
