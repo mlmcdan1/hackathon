@@ -7,7 +7,6 @@ const hoverSoundSrc = '/ButtonHoverSound.wav'
 
 const AboutPage = lazy(() => import('./pages/AboutPage/AboutPage'))
 const HackathonDetailPage = lazy(() => import('./pages/HackathonDetailPage/HackathonDetailPage'))
-const AdminPage = lazy(() => import('./pages/AdminPage/AdminPage'))
 
 const SOUND_ROUTE_PREFIXES = ['/', '/hackathons', '/about']
 
@@ -42,8 +41,6 @@ function useButtonHoverSound(enabled: boolean) {
 export default function App() {
   const { pathname } = useLocation()
   useButtonHoverSound(SOUND_ROUTE_PREFIXES.some((p) => pathname === p || pathname.startsWith(p + '/')))
-  const isAdmin = pathname === '/admin' || pathname.startsWith('/admin/')
-
   return (
     <>
       <Routes>
@@ -51,10 +48,9 @@ export default function App() {
         <Route path="/hackathons" element={<HackathonSectionPage />} />
         <Route path="/hackathons/:id" element={<Suspense fallback={null}><HackathonDetailPage /></Suspense>} />
         <Route path="/about" element={<Suspense fallback={null}><AboutPage /></Suspense>} />
-        <Route path="/admin" element={<Suspense fallback={null}><AdminPage /></Suspense>} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-      {!isAdmin && <SiteFooter />}
+      <SiteFooter />
     </>
   )
 }

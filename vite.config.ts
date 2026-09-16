@@ -1,10 +1,9 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
-import { adminDevMiddleware } from './scripts/adminDevMiddleware'
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), adminDevMiddleware()],
+  plugins: [react()],
   build: {
     rollupOptions: {
       output: {
