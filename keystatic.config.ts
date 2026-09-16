@@ -26,38 +26,39 @@ export default config({
       columns: ['title', 'startDate', 'published'],
       entryLayout: 'form',
       schema: {
-        // This only generates the internal file name — it's not shown on
-        // the site. Reuse the event's title here; it doesn't need to
-        // match exactly, it just becomes the event's permanent ID.
+        title: fields.text({
+          label: 'Event Name',
+          description: 'What people will see as the event’s name, e.g. "Mobile App Blitz".',
+          validation: { isRequired: true },
+        }),
+        // Auto-fills from the name above as you type. It only becomes a
+        // behind-the-scenes file name — nothing about it shows on the site.
         slug: fields.slug({
           name: {
-            label: 'Event ID',
-            description: "Used to generate this event's internal file name. Reuse the title — it doesn't need to match exactly.",
+            label: 'Internal ID',
+            description: "Fills in automatically from the name above — it's just used internally, no need to touch it.",
             validation: { isRequired: true },
           },
         }),
-        title: fields.text({
-          label: 'Title',
-          description: 'The event name as shown on the site.',
-          validation: { isRequired: true },
-        }),
-        published: fields.checkbox({
-          label: 'Published',
-          description: 'Off = saved as a draft, hidden from the live site.',
-          defaultValue: false,
-        }),
         description: fields.text({
           label: 'Description',
+          description: 'A sentence or two about the event, shown on its card and detail page.',
           multiline: true,
           validation: { isRequired: true },
         }),
+        published: fields.checkbox({
+          label: 'Visible on the website',
+          description: "Turn this on when you're ready for people to see it. Leave it off while you're still setting things up.",
+          defaultValue: false,
+        }),
         category: fields.text({
           label: 'Category',
-          description: 'Short label, e.g. "Web Dev", "AI / ML", "Security".',
+          description: 'A short label people will see, like "Web Dev", "AI / ML", or "Security".',
           validation: { isRequired: true },
         }),
         tag: fields.select({
-          label: 'Type',
+          label: 'Event Type',
+          description: 'What kind of event this is — shown as a small badge on the card.',
           options: [
             { label: 'Hackathon', value: 'Hackathon' },
             { label: 'Sprint', value: 'Sprint' },
@@ -66,9 +67,24 @@ export default config({
           ],
           defaultValue: 'Hackathon',
         }),
+        location: fields.text({
+          label: 'Location',
+          description: 'Where it’s happening, e.g. "Augusta, GA" or "Online".',
+          validation: { isRequired: true },
+        }),
+        format: fields.select({
+          label: 'How people attend',
+          description: 'Will people show up in person, join online, or both?',
+          options: [
+            { label: 'In-Person', value: 'in-person' },
+            { label: 'Virtual', value: 'virtual' },
+            { label: 'Hybrid', value: 'hybrid' },
+          ],
+          defaultValue: 'in-person',
+        }),
         color: fields.select({
-          label: 'Accent Color',
-          description: 'Controls the card color on the events page.',
+          label: 'Card Color',
+          description: 'Just changes the color of the event’s card — pick whichever looks good.',
           options: [
             { label: 'Red', value: 'red' },
             { label: 'Yellow', value: 'yellow' },
@@ -79,53 +95,67 @@ export default config({
           ],
           defaultValue: 'teal',
         }),
-        location: fields.text({
-          label: 'Location',
-          description: 'e.g. "Augusta, GA" or "Online".',
+        startDate: fields.date({
+          label: 'Start Date',
+          description: 'The day the event begins.',
           validation: { isRequired: true },
         }),
-        format: fields.select({
-          label: 'Format',
-          options: [
-            { label: 'In-Person', value: 'in-person' },
-            { label: 'Virtual', value: 'virtual' },
-            { label: 'Hybrid', value: 'hybrid' },
-          ],
-          defaultValue: 'in-person',
+        endDate: fields.date({
+          label: 'End Date',
+          description: 'The day it wraps up — same as the start date for a one-day event.',
+          validation: { isRequired: true },
         }),
-        startDate: fields.date({ label: 'Start Date', validation: { isRequired: true } }),
-        endDate: fields.date({ label: 'End Date', validation: { isRequired: true } }),
         startTime: fields.text({
           label: 'Start Time',
-          description: '24-hour format, e.g. "09:00".',
+          description: 'Uses a 24-hour clock: 9:00 AM is "09:00", 5:00 PM is "17:00".',
           defaultValue: '09:00',
         }),
         endTime: fields.text({
           label: 'End Time',
-          description: '24-hour format, e.g. "21:00".',
+          description: 'Same 24-hour format as above.',
           defaultValue: '17:00',
         }),
         duration: fields.text({
-          label: 'Duration label',
-          description: 'Shown as-is on the site, e.g. "36 hrs" or "2 days".',
+          label: 'Duration',
+          description: 'How long it runs, written out plainly, e.g. "36 hrs" or "2 days".',
         }),
         prizePool: fields.text({
           label: 'Prize Pool',
-          description: 'Shown as-is, e.g. "$3,000" or "Network".',
+          description: 'What’s up for grabs, e.g. "$3,000" or "Network" if there’s no cash prize.',
         }),
-        maxTeams: fields.integer({ label: 'Max Teams', defaultValue: 0 }),
-        currentTeams: fields.integer({ label: 'Current Teams', defaultValue: 0 }),
-        maxParticipants: fields.integer({ label: 'Max Participants', defaultValue: 0 }),
-        currentParticipants: fields.integer({ label: 'Current Participants', defaultValue: 0 }),
-        registrationOpen: fields.checkbox({ label: 'Registration Open', defaultValue: false }),
-        tags: fields.array(fields.text({ label: 'Tag' }), {
-          label: 'Tags',
-          description: 'Short keyword chips shown on the event card.',
-          itemLabel: (props) => props.value || 'Tag',
+        maxTeams: fields.integer({
+          label: 'Team Limit',
+          description: 'The most teams you’ll allow. Use 0 if you’re not tracking teams.',
+          defaultValue: 0,
+        }),
+        currentTeams: fields.integer({
+          label: 'Teams Signed Up',
+          description: 'How many teams have registered so far — update this as people sign up.',
+          defaultValue: 0,
+        }),
+        maxParticipants: fields.integer({
+          label: 'Participant Limit',
+          description: 'The most people you’ll allow to attend.',
+          defaultValue: 0,
+        }),
+        currentParticipants: fields.integer({
+          label: 'People Signed Up',
+          description: 'How many people have registered so far.',
+          defaultValue: 0,
+        }),
+        registrationOpen: fields.checkbox({
+          label: 'Registration Open',
+          description: 'Turn this on to let people sign up, and off once registration closes.',
+          defaultValue: false,
+        }),
+        tags: fields.array(fields.text({ label: 'Keyword' }), {
+          label: 'Keywords',
+          description: 'Short words shown as little chips on the card, like "React" or "Beginner Friendly".',
+          itemLabel: (props) => props.value || 'Keyword',
         }),
         image: fields.image({
-          label: 'Image',
-          description: 'Optional. Leave empty to use the default placeholder.',
+          label: 'Cover Image',
+          description: 'Optional — leave this empty to use the default picture.',
           directory: 'public/events-images',
           publicPath: '/events-images/',
         }),
