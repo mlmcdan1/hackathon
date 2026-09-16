@@ -1,15 +1,17 @@
 import { config, fields, collection } from '@keystatic/core'
 
-// Content edited here is written straight to GitHub as commits — no
-// database, no separate CMS server. Pushing a change triggers a normal
-// Vercel deploy, same as if someone had hand-edited the JSON file and
-// pushed it themselves. See src/lib/eventUtils.ts and
-// scripts/generate-events-json.mjs for how these files turn back into the
-// single events.json array the site actually reads at build time.
+// Local-mode Keystatic: the admin UI writes straight to the files on disk,
+// no GitHub OAuth, no server, no database. Run it with `npx vercel dev`
+// (needed so api/keystatic/[...params].ts is served) and open
+// http://localhost:3000/keystatic, edit, then commit/push the changed
+// files yourself like any other local edit. It does nothing useful on the
+// deployed site — there's no persistent filesystem to write to there — so
+// this is a local-only editing tool, not a live admin panel.
+// See src/lib/eventUtils.ts and scripts/generate-events-json.mjs for how
+// these files turn back into the single events.json array the site reads.
 export default config({
   storage: {
-    kind: 'github',
-    repo: { owner: 'mlmcdan1', name: 'hackathon' },
+    kind: 'local',
   },
   ui: {
     brand: { name: 'Augusta Hackathon' },

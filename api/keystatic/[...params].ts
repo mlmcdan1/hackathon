@@ -1,17 +1,10 @@
-// Vercel Node.js function backing the Keystatic admin UI at /keystatic.
-// Handles GitHub OAuth (login/callback) and the git-write API calls the UI
-// makes when an editor saves an entry — nothing here touches a database,
-// it all just proxies to GitHub as the signed-in editor. Requires
-// KEYSTATIC_GITHUB_CLIENT_ID, KEYSTATIC_GITHUB_CLIENT_SECRET and
-// KEYSTATIC_SECRET to be set as Vercel environment variables.
+// Serves the Keystatic admin UI's local-mode API calls at /keystatic —
+// reads/writes files on disk via `process.cwd()`, no GitHub OAuth, no env
+// vars. Only meaningful when run locally (`npx vercel dev`); the deployed
+// site has no persistent filesystem for this to write to.
 import { makeGenericAPIRouteHandler } from '@keystatic/core/api/generic'
 import keystaticConfig from '../../keystatic.config'
 
-// Keystatic's field builders (fields.text(), fields.image(), etc., used in
-// keystatic.config.ts) double as the admin UI's form definitions, so they
-// pull in the full @keystar/ui component tree — too heavy for Vercel's
-// restricted Edge runtime allowlist. This runs as a normal Node.js
-// serverless function instead, which has no such module restriction.
 const handler = makeGenericAPIRouteHandler({ config: keystaticConfig })
 
 // Vercel's Node runtime treats a bare `export default` as the legacy
