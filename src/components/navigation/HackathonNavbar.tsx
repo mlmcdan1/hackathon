@@ -3,7 +3,6 @@ import { useEffect, useRef, useState } from 'react'
 const NAV_ITEMS = [
   { label: 'Home', path: '/' },
   { label: 'Hackathons', path: '/hackathons' },
-  { label: 'About', path: '/about' },
 ]
 
 interface HackathonNavbarProps {
