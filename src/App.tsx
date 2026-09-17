@@ -42,6 +42,8 @@ function useButtonHoverSound(enabled: boolean) {
 export default function App() {
   const { pathname } = useLocation()
   useButtonHoverSound(SOUND_ROUTE_PREFIXES.some((p) => pathname === p || pathname.startsWith(p + '/')))
+  const isAdmin = pathname === '/manage-events' || pathname.startsWith('/manage-events/')
+
   return (
     <>
       <Routes>
@@ -52,7 +54,7 @@ export default function App() {
         <Route path="/manage-events" element={<Suspense fallback={null}><AdminPage /></Suspense>} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-      <SiteFooter />
+      {!isAdmin && <SiteFooter />}
     </>
   )
 }
