@@ -1,9 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="24" height="36" viewBox="0 0 12 18" shape-rendering="crispEdges">
-  <!-- outer black outline -->
-  <path d="M0,0 L0,14 L4,10 L6,16 L9,15 L7,9 L11,9 Z" fill="#0a0a0f"/>
-  <!-- purple fill -->
-  <path d="M1,2 L1,13 L4,10 L6,15 L8,14 L6,8 L10,8 Z" fill="#7c3aed"/>
-  <!-- light highlight edge -->
-  <rect x="1" y="2" width="1" height="7" fill="#c4b5fd"/>
-  <rect x="2" y="2" width="1" height="1" fill="#c4b5fd"/>
-</svg>
